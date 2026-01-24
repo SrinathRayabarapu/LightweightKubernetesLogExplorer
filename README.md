@@ -2,6 +2,36 @@
 
 A lightweight, local web application for exploring Kubernetes logs across multiple environments. Built for developers who need quick access to logs without external infrastructure.
 
+## Table of Contents
+
+- [Important: Cluster Configuration](#important-cluster-configuration)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation & Run Guide](#installation--run-guide)
+  - [Step 1: Prerequisites Check](#step-1-prerequisites-check)
+  - [Step 2: Configure Kubernetes Clusters](#step-2-configure-kubernetes-clusters)
+  - [Step 3: Install Backend Dependencies](#step-3-install-backend-dependencies)
+  - [Step 4: Install Frontend Dependencies](#step-4-install-frontend-dependencies)
+  - [Step 5: Start the Backend Server](#step-5-start-the-backend-server)
+  - [Step 6: Start the Frontend Development Server](#step-6-start-the-frontend-development-server)
+  - [Step 7: Access the Application](#step-7-access-the-application)
+  - [Step 8: Verify Everything Works](#step-8-verify-everything-works)
+- [Running in Production Mode](#running-in-production-mode)
+- [Stopping the Application](#stopping-the-application)
+- [Usage](#usage)
+  - [Viewing Logs](#viewing-logs)
+  - [Searching Logs](#searching-logs)
+  - [Time Navigation](#time-navigation)
+  - [Auto-Refresh](#auto-refresh)
+- [Architecture](#architecture)
+- [API Reference](#api-reference)
+- [Storage & Retention](#storage--retention)
+- [Configuration Reference](#configuration-reference)
+- [Troubleshooting](#troubleshooting)
+- [Limitations](#limitations)
+- [Development](#development)
+- [License](#license)
+
 ## Important: Cluster Configuration
 
 **This application does NOT store cluster IPs, tokens, or certificates directly.** Instead, it uses **kubectl contexts** which are configured separately in your `~/.kube/config` file.
