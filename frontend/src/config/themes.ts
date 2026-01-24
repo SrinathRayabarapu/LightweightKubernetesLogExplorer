@@ -847,6 +847,301 @@ export const themes: Record<string, Theme> = {
       inputPlaceholder: '#a090b3',
     },
   },
+  // ==================== BOOTSTRAP-INSPIRED THEMES ====================
+
+  // Darkly (Bootstrap Darkly theme inspired)
+  darkly: {
+    id: 'darkly',
+    name: 'Darkly',
+    colors: {
+      bgPrimary: '#222',
+      bgSecondary: '#303030',
+      bgTertiary: '#3a3a3a',
+      bgHover: '#444',
+      bgSelected: '#555',
+      
+      textPrimary: '#fff',
+      textSecondary: '#adb5bd',
+      textMuted: '#888',
+      textAccent: '#ffffff',
+      
+      borderPrimary: '#444',
+      borderSecondary: '#555',
+      
+      accentPrimary: '#375a7f',
+      accentSecondary: '#4e7faa',
+      
+      error: '#e74c3c',
+      errorBg: '#3a2222',
+      warning: '#f39c12',
+      warningBg: '#3a3322',
+      success: '#00bc8c',
+      successBg: '#223a33',
+      exception: '#e74c3c',
+      exceptionBg: '#3a2222',
+      
+      timestamp: '#4e7faa',
+      podName: '#fff',
+      containerName: '#888',
+      searchHighlight: '#f39c12',
+      searchHighlightText: '#222',
+      
+      buttonBg: '#375a7f',
+      buttonBgHover: '#4e7faa',
+      buttonText: '#fff',
+      buttonBorder: '#375a7f',
+      
+      inputBg: '#444',
+      inputBorder: '#555',
+      inputText: '#fff',
+      inputPlaceholder: '#888',
+    },
+  },
+
+  // Cyborg (Bootstrap Cyborg theme inspired)
+  cyborg: {
+    id: 'cyborg',
+    name: 'Cyborg',
+    colors: {
+      bgPrimary: '#060606',
+      bgSecondary: '#0f0f0f',
+      bgTertiary: '#1a1a1a',
+      bgHover: '#2a2a2a',
+      bgSelected: '#333',
+      
+      textPrimary: '#999',
+      textSecondary: '#adafae',
+      textMuted: '#666',
+      textAccent: '#fff',
+      
+      borderPrimary: '#282828',
+      borderSecondary: '#3a3a3a',
+      
+      accentPrimary: '#2a9fd6',
+      accentSecondary: '#4db8e8',
+      
+      error: '#cc0000',
+      errorBg: '#220000',
+      warning: '#ff8800',
+      warningBg: '#332200',
+      success: '#77b300',
+      successBg: '#223300',
+      exception: '#cc0000',
+      exceptionBg: '#220000',
+      
+      timestamp: '#2a9fd6',
+      podName: '#999',
+      containerName: '#666',
+      searchHighlight: '#ff8800',
+      searchHighlightText: '#060606',
+      
+      buttonBg: '#2a9fd6',
+      buttonBgHover: '#4db8e8',
+      buttonText: '#fff',
+      buttonBorder: '#2a9fd6',
+      
+      inputBg: '#1a1a1a',
+      inputBorder: '#3a3a3a',
+      inputText: '#999',
+      inputPlaceholder: '#555',
+    },
+  },
+
+  // Flatly (Bootstrap Flatly theme inspired - light)
+  flatly: {
+    id: 'flatly',
+    name: 'Flatly',
+    colors: {
+      bgPrimary: '#ffffff',
+      bgSecondary: '#ecf0f1',
+      bgTertiary: '#ffffff',
+      bgHover: '#dce4e6',
+      bgSelected: '#c8d6db',
+      
+      textPrimary: '#2c3e50',
+      textSecondary: '#5a7184',
+      textMuted: '#7b8a8b',
+      textAccent: '#1a252f',
+      
+      borderPrimary: '#dce4ec',
+      borderSecondary: '#bdc3c7',
+      
+      accentPrimary: '#18bc9c',
+      accentSecondary: '#1abc9c',
+      
+      error: '#e74c3c',
+      errorBg: '#fff5f5',
+      warning: '#f39c12',
+      warningBg: '#fff8e1',
+      success: '#18bc9c',
+      successBg: '#e8f8f5',
+      exception: '#e74c3c',
+      exceptionBg: '#fff5f5',
+      
+      timestamp: '#18bc9c',
+      podName: '#2c3e50',
+      containerName: '#7b8a8b',
+      searchHighlight: '#f1c40f',
+      searchHighlightText: '#2c3e50',
+      
+      buttonBg: '#ecf0f1',
+      buttonBgHover: '#dce4e6',
+      buttonText: '#2c3e50',
+      buttonBorder: '#bdc3c7',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#bdc3c7',
+      inputText: '#2c3e50',
+      inputPlaceholder: '#95a5a6',
+    },
+  },
+
+  // Cosmo (Bootstrap Cosmo theme inspired - light)
+  cosmo: {
+    id: 'cosmo',
+    name: 'Cosmo',
+    colors: {
+      bgPrimary: '#ffffff',
+      bgSecondary: '#f8f9fa',
+      bgTertiary: '#ffffff',
+      bgHover: '#e9ecef',
+      bgSelected: '#dee2e6',
+      
+      textPrimary: '#373a3c',
+      textSecondary: '#55595c',
+      textMuted: '#818a91',
+      textAccent: '#212529',
+      
+      borderPrimary: '#e7e7e7',
+      borderSecondary: '#c0c0c0',
+      
+      accentPrimary: '#2780e3',
+      accentSecondary: '#4a9be8',
+      
+      error: '#ff0039',
+      errorBg: '#fff5f7',
+      warning: '#ff7518',
+      warningBg: '#fff8f0',
+      success: '#3fb618',
+      successBg: '#f0fdf4',
+      exception: '#ff0039',
+      exceptionBg: '#fff5f7',
+      
+      timestamp: '#2780e3',
+      podName: '#373a3c',
+      containerName: '#818a91',
+      searchHighlight: '#ff7518',
+      searchHighlightText: '#373a3c',
+      
+      buttonBg: '#f8f9fa',
+      buttonBgHover: '#e9ecef',
+      buttonText: '#373a3c',
+      buttonBorder: '#c0c0c0',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#c0c0c0',
+      inputText: '#373a3c',
+      inputPlaceholder: '#818a91',
+    },
+  },
+
+  // Superhero (Bootstrap Superhero theme inspired - dark)
+  superhero: {
+    id: 'superhero',
+    name: 'Superhero',
+    colors: {
+      bgPrimary: '#2b3e50',
+      bgSecondary: '#3b5168',
+      bgTertiary: '#4e5d6c',
+      bgHover: '#5a6a7a',
+      bgSelected: '#6a7a8a',
+      
+      textPrimary: '#ebebeb',
+      textSecondary: '#c5c5c5',
+      textMuted: '#9a9a9a',
+      textAccent: '#ffffff',
+      
+      borderPrimary: '#4e5d6c',
+      borderSecondary: '#5a6978',
+      
+      accentPrimary: '#df691a',
+      accentSecondary: '#e88a4c',
+      
+      error: '#d9534f',
+      errorBg: '#3a2828',
+      warning: '#f0ad4e',
+      warningBg: '#3a3428',
+      success: '#5cb85c',
+      successBg: '#283a28',
+      exception: '#d9534f',
+      exceptionBg: '#3a2828',
+      
+      timestamp: '#df691a',
+      podName: '#ebebeb',
+      containerName: '#9a9a9a',
+      searchHighlight: '#f0ad4e',
+      searchHighlightText: '#2b3e50',
+      
+      buttonBg: '#4e5d6c',
+      buttonBgHover: '#5a6978',
+      buttonText: '#ebebeb',
+      buttonBorder: '#5a6978',
+      
+      inputBg: '#4e5d6c',
+      inputBorder: '#5a6978',
+      inputText: '#ebebeb',
+      inputPlaceholder: '#8a8a8a',
+    },
+  },
+
+  // United (Bootstrap United theme inspired - light with orange)
+  united: {
+    id: 'united',
+    name: 'United',
+    colors: {
+      bgPrimary: '#ffffff',
+      bgSecondary: '#f8f9fa',
+      bgTertiary: '#ffffff',
+      bgHover: '#f1f1f1',
+      bgSelected: '#e5e5e5',
+      
+      textPrimary: '#333333',
+      textSecondary: '#555555',
+      textMuted: '#777777',
+      textAccent: '#000000',
+      
+      borderPrimary: '#e5e5e5',
+      borderSecondary: '#cccccc',
+      
+      accentPrimary: '#e95420',
+      accentSecondary: '#ee7849',
+      
+      error: '#df382c',
+      errorBg: '#fff5f5',
+      warning: '#efb73e',
+      warningBg: '#fff8e1',
+      success: '#38b44a',
+      successBg: '#f0fdf4',
+      exception: '#df382c',
+      exceptionBg: '#fff5f5',
+      
+      timestamp: '#e95420',
+      podName: '#333333',
+      containerName: '#777777',
+      searchHighlight: '#efb73e',
+      searchHighlightText: '#333333',
+      
+      buttonBg: '#f8f9fa',
+      buttonBgHover: '#e9ecef',
+      buttonText: '#333333',
+      buttonBorder: '#cccccc',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#cccccc',
+      inputText: '#333333',
+      inputPlaceholder: '#999999',
+    },
+  },
 };
 
 // Default theme
@@ -859,8 +1154,8 @@ export function getTheme(id: string): Theme {
 
 // Get all theme options for dropdown - organized by category
 export function getThemeOptions(): { id: string; name: string }[] {
-  const darkThemes = ['classicDark', 'midnight', 'ocean', 'forest', 'slate', 'sunset', 'lavender', 'coffee'];
-  const lightThemes = ['daylight', 'arctic', 'paper', 'mint', 'rose', 'sky', 'sand', 'lavenderLight'];
+  const darkThemes = ['classicDark', 'midnight', 'ocean', 'forest', 'slate', 'sunset', 'lavender', 'coffee', 'darkly', 'cyborg', 'superhero'];
+  const lightThemes = ['daylight', 'arctic', 'paper', 'mint', 'rose', 'sky', 'sand', 'lavenderLight', 'flatly', 'cosmo', 'united'];
   
   return [
     // Dark themes first
