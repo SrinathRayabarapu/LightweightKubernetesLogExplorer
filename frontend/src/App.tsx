@@ -408,6 +408,7 @@ export default function App() {
         ) : (
           <LogTable
             logs={logs}
+            allLogs={rawLogs}
             total={total}
             hasMore={hasMore}
             isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}

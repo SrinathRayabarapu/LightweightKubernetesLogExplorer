@@ -3,12 +3,14 @@
  */
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
 import { useTheme } from '../context/ThemeContext';
 
 interface LogTableProps {
   logs: LogEntry[];
+  allLogs?: LogEntry[]; // All unfiltered logs for complete download
   total: number;
   hasMore: boolean;
   isLoading: boolean;
@@ -27,7 +29,7 @@ const MAX_FONT_SIZE = 22;
 const DEFAULT_FONT_SIZE = 14;
 const FONT_SIZE_STORAGE_KEY = 'logTableFontSize';
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
@@ -36,6 +38,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
   const [showHeaders, setShowHeaders] = useState(true);
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const downloadDropdownRef = useRef<HTMLDivElement>(null);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,6 +74,87 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const handleResetFontSize = () => {
     setFontSize(DEFAULT_FONT_SIZE);
   };
+
+  /**
+   * Export logs to Excel file.
+   * @param logsToExport - Array of log entries to export
+   * @param filename - Name for the downloaded file
+   */
+  const exportToExcel = (logsToExport: LogEntry[], filename: string) => {
+    if (logsToExport.length === 0) {
+      alert('No logs to download');
+      return;
+    }
+
+    // Transform logs to Excel-friendly format
+    const excelData = logsToExport.map(log => ({
+      'Timestamp': new Date(log.timestamp).toISOString(),
+      'Environment': log.env,
+      'Namespace': log.namespace,
+      'Service': log.service,
+      'Pod': log.pod,
+      'Container': log.container,
+      'Message': log.message,
+    }));
+
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs');
+
+    // Auto-size columns
+    const columnWidths = [
+      { wch: 25 },  // Timestamp
+      { wch: 12 },  // Environment
+      { wch: 15 },  // Namespace
+      { wch: 35 },  // Service
+      { wch: 50 },  // Pod
+      { wch: 30 },  // Container
+      { wch: 100 }, // Message
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Generate Excel file and trigger download
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
+    setShowDownloadDropdown(false);
+  };
+
+  /**
+   * Download filtered logs (currently displayed logs).
+   */
+  const handleDownloadFilteredLogs = () => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const podName = logs[0]?.pod || 'logs';
+    const filename = `filtered_logs_${podName}_${timestamp}`;
+    exportToExcel(logs, filename);
+  };
+
+  /**
+   * Download all logs for the current POD.
+   */
+  const handleDownloadAllLogs = () => {
+    const logsToDownload = allLogs || logs;
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const podName = logsToDownload[0]?.pod || 'logs';
+    const filename = `all_logs_${podName}_${timestamp}`;
+    exportToExcel(logsToDownload, filename);
+  };
+
+  // Close download dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target as Node)) {
+        setShowDownloadDropdown(false);
+      }
+    };
+
+    if (showDownloadDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDownloadDropdown]);
 
   // Dynamic styles based on current theme
   const styles = getThemedStyles(theme.colors);
@@ -660,6 +745,77 @@ ${log.message}`;
             +
           </button>
         </div>
+
+        {/* Download Dropdown */}
+        <div ref={downloadDropdownRef} style={styles.downloadContainer}>
+          <button
+            onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+            style={styles.downloadButton}
+            title="Download logs as Excel"
+          >
+            <svg 
+              width="14" 
+              height="14" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2"
+              style={{ marginRight: '6px' }}
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7,10 12,15 17,10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download
+            <svg 
+              width="12" 
+              height="12" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2"
+              style={{ marginLeft: '4px' }}
+            >
+              <polyline points="6,9 12,15 18,9" />
+            </svg>
+          </button>
+          {showDownloadDropdown && (
+            <div style={styles.downloadDropdown}>
+              <button
+                onClick={handleDownloadFilteredLogs}
+                style={styles.downloadOption}
+                title={`Download ${logs.length} filtered log entries`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <div style={styles.downloadOptionText}>
+                  <span style={styles.downloadOptionTitle}>Download Filtered Logs</span>
+                  <span style={styles.downloadOptionDesc}>{logs.length.toLocaleString()} entries (with current filters)</span>
+                </div>
+              </button>
+              <button
+                onClick={handleDownloadAllLogs}
+                style={styles.downloadOption}
+                title={`Download all ${(allLogs || logs).length} log entries`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                <div style={styles.downloadOptionText}>
+                  <span style={styles.downloadOptionTitle}>Download All Logs</span>
+                  <span style={styles.downloadOptionDesc}>{(allLogs || logs).length.toLocaleString()} entries (complete POD logs)</span>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div ref={tableWrapperRef} style={styles.tableWrapper}>
@@ -1101,6 +1257,64 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       minWidth: '36px',
       textAlign: 'center' as const,
       cursor: 'pointer',
+    },
+    downloadContainer: {
+      position: 'relative' as const,
+      marginLeft: '8px',
+    },
+    downloadButton: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '6px 12px',
+      fontSize: '13px',
+      fontWeight: 500,
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '6px',
+      backgroundColor: colors.buttonBg,
+      color: colors.buttonText,
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    downloadDropdown: {
+      position: 'absolute' as const,
+      top: '100%',
+      right: 0,
+      marginTop: '6px',
+      backgroundColor: colors.bgTertiary,
+      border: `1px solid ${colors.borderSecondary}`,
+      borderRadius: '8px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+      zIndex: 1000,
+      minWidth: '280px',
+      overflow: 'hidden',
+    },
+    downloadOption: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '12px',
+      width: '100%',
+      padding: '12px 16px',
+      border: 'none',
+      backgroundColor: 'transparent',
+      color: colors.textPrimary,
+      cursor: 'pointer',
+      textAlign: 'left' as const,
+      transition: 'background-color 0.2s',
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+    },
+    downloadOptionText: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '2px',
+    },
+    downloadOptionTitle: {
+      fontSize: '14px',
+      fontWeight: 500,
+      color: colors.textPrimary,
+    },
+    downloadOptionDesc: {
+      fontSize: '12px',
+      color: colors.textMuted,
     },
   };
 }

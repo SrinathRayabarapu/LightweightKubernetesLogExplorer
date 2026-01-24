@@ -79,6 +79,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | **JSON Formatting** | Automatic pretty-printing of JSON payloads in log messages |
 | **Copy to Clipboard** | Floating "Copy" button on each log for easy sharing |
 | **Ask AI Integration** | Analyze logs with AI - opens Perplexity AI with your log for instant analysis |
+| **Excel Export** | Download logs as Excel with two options: filtered logs or complete POD logs |
 | **Log Deduplication** | Hash-based deduplication prevents duplicate log storage |
 
 ### Search & Navigation
