@@ -78,6 +78,8 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | **Multi-line Support** | Proper handling of Java stack traces and multi-line entries |
 | **JSON Formatting** | Automatic pretty-printing of JSON payloads in log messages |
 | **Copy to Clipboard** | Floating "Copy" button on each log for easy sharing |
+| **Ask AI Integration** | Analyze logs with AI - opens Perplexity AI with your log for instant analysis |
+| **Excel Export** | Download logs as Excel with two options: filtered logs or complete POD logs |
 | **Log Deduplication** | Hash-based deduplication prevents duplicate log storage |
 
 ### Search & Navigation
@@ -101,6 +103,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | **Fixed Column Widths** | Timestamp and Pod columns maintain consistent width |
 | **Responsive Design** | Clean, modern interface optimized for log viewing |
 | **Millisecond Precision** | Timestamps display with millisecond accuracy |
+| **Adjustable Font Size** | + and − controls to adjust log table font size (10px-22px) |
 
 ## Requirements
 
@@ -398,6 +401,38 @@ npm run preview
    - **1m, 2m** - For active debugging
    - **5m, 10m** - For passive monitoring
 3. ALL logs will be fetched on each refresh cycle
+
+### Adjusting Font Size
+
+The log table has adjustable font size for better readability:
+
+1. Use **−** button to decrease font size
+2. Use **+** button to increase font size
+3. Click the **size value** (e.g., "14px") to reset to default
+4. Range: 10px to 22px
+5. Setting persists in browser localStorage
+6. Only affects log table data (timestamp, pod, message columns)
+
+### Downloading Logs
+
+Export logs to Excel for offline analysis or sharing:
+
+1. Click the **Download** dropdown button
+2. Choose an option:
+   - **Download Filtered Logs**: Exports currently displayed logs (with all active filters)
+   - **Download All Logs**: Exports complete POD logs (ignoring filters)
+3. Excel file includes: Timestamp, Environment, Namespace, Service, Pod, Container, Message
+4. Filename format: `filtered_logs_<pod-name>_<timestamp>.xlsx`
+
+### Ask AI (Log Analysis)
+
+Get instant AI analysis for any log entry:
+
+1. Hover over any log row
+2. Click the **Ask AI** button (star icon)
+3. Perplexity AI opens in a new tab with your log pre-loaded
+4. AI analyzes the log and suggests causes/solutions for errors
+5. Full prompt is also copied to clipboard for use with other AI services
 
 ### Themes & UI Customization
 

@@ -3,12 +3,14 @@
  */
 
 import { useState, useRef, useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
 import { useTheme } from '../context/ThemeContext';
 
 interface LogTableProps {
   logs: LogEntry[];
+  allLogs?: LogEntry[]; // All unfiltered logs for complete download
   total: number;
   hasMore: boolean;
   isLoading: boolean;
@@ -21,18 +23,138 @@ interface LogTableProps {
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+// Font size constants
+const MIN_FONT_SIZE = 10;
+const MAX_FONT_SIZE = 22;
+const DEFAULT_FONT_SIZE = 14;
+const FONT_SIZE_STORAGE_KEY = 'logTableFontSize';
+
+export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
+  const [hoveredChatGptButton, setHoveredChatGptButton] = useState<number | null>(null);
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
   const [showHeaders, setShowHeaders] = useState(true);
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const downloadDropdownRef = useRef<HTMLDivElement>(null);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Font size state with localStorage persistence
+  const [fontSize, setFontSize] = useState<number>(() => {
+    const saved = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed >= MIN_FONT_SIZE && parsed <= MAX_FONT_SIZE) {
+        return parsed;
+      }
+    }
+    return DEFAULT_FONT_SIZE;
+  });
+
+  // Persist font size to localStorage
+  useEffect(() => {
+    localStorage.setItem(FONT_SIZE_STORAGE_KEY, fontSize.toString());
+  }, [fontSize]);
+
+  // Font size handlers
+  const handleIncreaseFontSize = () => {
+    setFontSize(prev => Math.min(prev + 1, MAX_FONT_SIZE));
+  };
+
+  const handleDecreaseFontSize = () => {
+    setFontSize(prev => Math.max(prev - 1, MIN_FONT_SIZE));
+  };
+
+  const handleResetFontSize = () => {
+    setFontSize(DEFAULT_FONT_SIZE);
+  };
+
+  /**
+   * Export logs to Excel file.
+   * @param logsToExport - Array of log entries to export
+   * @param filename - Name for the downloaded file
+   */
+  const exportToExcel = (logsToExport: LogEntry[], filename: string) => {
+    if (logsToExport.length === 0) {
+      alert('No logs to download');
+      return;
+    }
+
+    // Transform logs to Excel-friendly format
+    const excelData = logsToExport.map(log => ({
+      'Timestamp': new Date(log.timestamp).toISOString(),
+      'Environment': log.env,
+      'Namespace': log.namespace,
+      'Service': log.service,
+      'Pod': log.pod,
+      'Container': log.container,
+      'Message': log.message,
+    }));
+
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Logs');
+
+    // Auto-size columns
+    const columnWidths = [
+      { wch: 25 },  // Timestamp
+      { wch: 12 },  // Environment
+      { wch: 15 },  // Namespace
+      { wch: 35 },  // Service
+      { wch: 50 },  // Pod
+      { wch: 30 },  // Container
+      { wch: 100 }, // Message
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Generate Excel file and trigger download
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
+    setShowDownloadDropdown(false);
+  };
+
+  /**
+   * Download filtered logs (currently displayed logs).
+   */
+  const handleDownloadFilteredLogs = () => {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const podName = logs[0]?.pod || 'logs';
+    const filename = `filtered_logs_${podName}_${timestamp}`;
+    exportToExcel(logs, filename);
+  };
+
+  /**
+   * Download all logs for the current POD.
+   */
+  const handleDownloadAllLogs = () => {
+    const logsToDownload = allLogs || logs;
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    const podName = logsToDownload[0]?.pod || 'logs';
+    const filename = `all_logs_${podName}_${timestamp}`;
+    exportToExcel(logsToDownload, filename);
+  };
+
+  // Close download dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target as Node)) {
+        setShowDownloadDropdown(false);
+      }
+    };
+
+    if (showDownloadDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDownloadDropdown]);
 
   // Dynamic styles based on current theme
   const styles = getThemedStyles(theme.colors);
@@ -91,6 +213,49 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
         console.error('Failed to copy log:', fallbackError);
       }
     }
+  };
+
+  /**
+   * Open AI service with the log message for analysis.
+   * Uses Perplexity AI which supports URL-based queries for instant analysis.
+   */
+  const handleAnalyzeWithAI = async (log: LogEntry) => {
+    // Create a concise prompt for AI analysis
+    // Keep it focused to work well with URL length limits
+    const logContext = `[${log.service}/${log.pod}] ${log.message}`;
+    
+    // Truncate if too long (URL limit is ~2000 chars, keep prompt under 1500)
+    const maxLength = 1500;
+    const truncatedLog = logContext.length > maxLength 
+      ? logContext.substring(0, maxLength) + '...[truncated]'
+      : logContext;
+    
+    const prompt = `Analyze this Kubernetes log entry. Explain what it means and if there's an error/warning, suggest causes and solutions:\n\n${truncatedLog}`;
+    
+    // Encode the prompt for URL
+    const encodedPrompt = encodeURIComponent(prompt);
+    
+    // Open Perplexity AI with the query (supports URL-based queries)
+    const aiUrl = `https://www.perplexity.ai/search?q=${encodedPrompt}`;
+    
+    // Also copy the full log to clipboard in case user wants to use elsewhere
+    try {
+      const fullPrompt = `Analyze this Kubernetes log entry and help me understand what it means. If there's an error or warning, suggest possible causes and solutions:
+
+Service: ${log.service}
+Pod: ${log.pod}
+Container: ${log.container}
+Timestamp: ${formatTimestamp(log.timestamp)}
+
+Log Message:
+${log.message}`;
+      await navigator.clipboard.writeText(fullPrompt);
+    } catch {
+      // Continue even if clipboard fails
+    }
+
+    // Open Perplexity AI in a new tab with the query
+    window.open(aiUrl, '_blank');
   };
 
   /**
@@ -286,10 +451,11 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
 
   /**
    * Get style for log message based on severity.
+   * Uses the current fontSize state for dynamic font sizing.
    */
   const getMessageStyle = (severity: 'error' | 'warning' | 'exception' | null): React.CSSProperties => {
     const baseStyle = {
-      ...styles.message,
+      ...styles.message(fontSize),
       color: theme.colors.textPrimary,
     };
     
@@ -543,6 +709,113 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             <span style={styles.loadingText}>Refreshing...</span>
           </div>
         )}
+        
+        {/* Font Size Controls */}
+        <div style={styles.fontSizeControls}>
+          <span style={styles.fontSizeLabel}>Font:</span>
+          <button
+            onClick={handleDecreaseFontSize}
+            disabled={fontSize <= MIN_FONT_SIZE}
+            style={{
+              ...styles.fontSizeButton,
+              opacity: fontSize <= MIN_FONT_SIZE ? 0.4 : 1,
+              cursor: fontSize <= MIN_FONT_SIZE ? 'not-allowed' : 'pointer',
+            }}
+            title="Decrease font size"
+          >
+            −
+          </button>
+          <span 
+            style={styles.fontSizeValue}
+            onClick={handleResetFontSize}
+            title="Click to reset to default (14px)"
+          >
+            {fontSize}px
+          </span>
+          <button
+            onClick={handleIncreaseFontSize}
+            disabled={fontSize >= MAX_FONT_SIZE}
+            style={{
+              ...styles.fontSizeButton,
+              opacity: fontSize >= MAX_FONT_SIZE ? 0.4 : 1,
+              cursor: fontSize >= MAX_FONT_SIZE ? 'not-allowed' : 'pointer',
+            }}
+            title="Increase font size"
+          >
+            +
+          </button>
+        </div>
+
+        {/* Download Dropdown */}
+        <div ref={downloadDropdownRef} style={styles.downloadContainer}>
+          <button
+            onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+            style={styles.downloadButton}
+            title="Download logs as Excel"
+          >
+            <svg 
+              width="14" 
+              height="14" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2"
+              style={{ marginRight: '6px' }}
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7,10 12,15 17,10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download
+            <svg 
+              width="12" 
+              height="12" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2"
+              style={{ marginLeft: '4px' }}
+            >
+              <polyline points="6,9 12,15 18,9" />
+            </svg>
+          </button>
+          {showDownloadDropdown && (
+            <div style={styles.downloadDropdown}>
+              <button
+                onClick={handleDownloadFilteredLogs}
+                style={styles.downloadOption}
+                title={`Download ${logs.length} filtered log entries`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+                <div style={styles.downloadOptionText}>
+                  <span style={styles.downloadOptionTitle}>Download Filtered Logs</span>
+                  <span style={styles.downloadOptionDesc}>{logs.length.toLocaleString()} entries (with current filters)</span>
+                </div>
+              </button>
+              <button
+                onClick={handleDownloadAllLogs}
+                style={styles.downloadOption}
+                title={`Download all ${(allLogs || logs).length} log entries`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                <div style={styles.downloadOptionText}>
+                  <span style={styles.downloadOptionTitle}>Download All Logs</span>
+                  <span style={styles.downloadOptionDesc}>{(allLogs || logs).length.toLocaleString()} entries (complete POD logs)</span>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div ref={tableWrapperRef} style={styles.tableWrapper}>
@@ -570,7 +843,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                     <div
                       onClick={() => handleTimestampClick(log.timestamp, log.id)}
                       style={{
-                        ...styles.timestamp,
+                        ...styles.timestamp(fontSize),
                         ...(selectedTimestamp === log.timestamp ? styles.timestampSelected : {}),
                       }}
                     >
@@ -584,26 +857,51 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                     )}
                   </td>
                   <td style={styles.tdPod}>
-                    <div style={styles.podName}>{log.pod}</div>
+                    <div style={styles.podName(fontSize)}>{log.pod}</div>
                   </td>
                   <td style={styles.tdMessage}>
                     <div style={styles.messageWrapper}>
                       <div style={styles.messageContainer}>
                         <pre style={getMessageStyle(severity)}>{highlightSearchMatches(formatJsonInMessage(log.message))}</pre>
                       </div>
-                      <button
-                        onClick={() => handleCopyLog(log)}
-                        onMouseEnter={() => setHoveredCopyButton(log.id)}
-                        onMouseLeave={() => setHoveredCopyButton(null)}
-                        style={{
-                          ...styles.copyButton,
-                          ...(hoveredCopyButton === log.id ? styles.copyButtonHovered : {}),
-                        }}
-                        title="Copy log content to clipboard"
-                        type="button"
-                      >
-                        Copy
-                      </button>
+                      <div style={styles.actionButtons}>
+                        <button
+                          onClick={() => handleCopyLog(log)}
+                          onMouseEnter={() => setHoveredCopyButton(log.id)}
+                          onMouseLeave={() => setHoveredCopyButton(null)}
+                          style={{
+                            ...styles.actionButton,
+                            ...(hoveredCopyButton === log.id ? styles.actionButtonHovered : {}),
+                          }}
+                          title="Copy log content to clipboard"
+                          type="button"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => handleAnalyzeWithAI(log)}
+                          onMouseEnter={() => setHoveredChatGptButton(log.id)}
+                          onMouseLeave={() => setHoveredChatGptButton(null)}
+                          style={{
+                            ...styles.actionButton,
+                            ...styles.chatGptButton,
+                            ...(hoveredChatGptButton === log.id ? styles.chatGptButtonHovered : {}),
+                          }}
+                          title="Analyze with AI (opens Perplexity with your log)"
+                          type="button"
+                        >
+                          <svg 
+                            width="14" 
+                            height="14" 
+                            viewBox="0 0 24 24" 
+                            fill="currentColor"
+                            style={{ marginRight: '4px' }}
+                          >
+                            <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/>
+                          </svg>
+                          Ask AI
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -776,13 +1074,13 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       minWidth: '175px',
       maxWidth: '175px',
     },
-    timestamp: {
+    timestamp: (fontSize: number) => ({
       fontFamily: 'var(--font-family-mono, monospace)',
-      fontSize: '14px',
+      fontSize: `${fontSize}px`,
       color: colors.timestamp,
       cursor: 'pointer',
       whiteSpace: 'nowrap' as const,
-    },
+    }),
     timestampSelected: {
       backgroundColor: colors.bgSelected,
       borderRadius: '4px',
@@ -797,13 +1095,13 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       minWidth: '250px',
       maxWidth: '250px',
     },
-    podName: {
+    podName: (fontSize: number) => ({
       fontFamily: 'var(--font-family-mono, monospace)',
-      fontSize: '14px',
+      fontSize: `${fontSize}px`,
       color: colors.podName,
       wordBreak: 'break-word' as const,
       overflowWrap: 'break-word' as const,
-    },
+    }),
     containerName: {
       fontFamily: 'var(--font-family-mono, monospace)',
       fontSize: '13px',
@@ -826,36 +1124,56 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       borderRadius: '6px',
       padding: '8px 12px',
     },
-    message: {
+    message: (fontSize: number) => ({
       margin: 0,
       fontFamily: 'var(--font-family-mono, monospace)',
-      fontSize: '14px',
+      fontSize: `${fontSize}px`,
       color: colors.textPrimary,
       whiteSpace: 'pre-wrap' as const,
       wordBreak: 'break-word' as const,
       lineHeight: '1.5',
-    },
-    copyButton: {
+    }),
+    actionButtons: {
       position: 'absolute' as const,
       top: '8px',
       right: '8px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
+      zIndex: 5,
+    },
+    actionButton: {
       background: colors.buttonBg,
       border: `1px solid ${colors.buttonBorder}`,
       borderRadius: '6px',
-      fontSize: '13px',
+      fontSize: '12px',
       fontWeight: 500,
       cursor: 'pointer',
-      padding: '6px 12px',
+      padding: '5px 10px',
       color: colors.buttonText,
       transition: 'all 0.2s',
       whiteSpace: 'nowrap' as const,
-      zIndex: 5,
-      boxShadow: `0 2px 4px rgba(0, 0, 0, 0.2)`,
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    copyButtonHovered: {
+    actionButtonHovered: {
       background: colors.buttonBgHover,
       color: colors.textAccent,
       borderColor: colors.borderSecondary,
+    },
+    chatGptButton: {
+      background: 'linear-gradient(135deg, #20b8cd 0%, #5436da 100%)',
+      borderColor: '#20b8cd',
+      color: '#ffffff',
+    },
+    chatGptButtonHovered: {
+      background: 'linear-gradient(135deg, #5436da 0%, #20b8cd 100%)',
+      borderColor: '#5436da',
+      color: '#ffffff',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 8px rgba(84, 54, 218, 0.3)',
     },
     loading: {
       padding: '50px',
@@ -901,6 +1219,101 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       fontSize: '16px',
     },
     loadingText: {
+      color: colors.textMuted,
+    },
+    fontSizeControls: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      marginLeft: 'auto',
+      padding: '4px 8px',
+      backgroundColor: colors.bgSecondary,
+      borderRadius: '6px',
+      border: `1px solid ${colors.borderPrimary}`,
+    },
+    fontSizeLabel: {
+      fontSize: '12px',
+      color: colors.textMuted,
+      fontWeight: 500,
+    },
+    fontSizeButton: {
+      width: '28px',
+      height: '28px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '16px',
+      fontWeight: 600,
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '4px',
+      backgroundColor: colors.buttonBg,
+      color: colors.buttonText,
+      transition: 'all 0.2s',
+    },
+    fontSizeValue: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: colors.textPrimary,
+      minWidth: '36px',
+      textAlign: 'center' as const,
+      cursor: 'pointer',
+    },
+    downloadContainer: {
+      position: 'relative' as const,
+      marginLeft: '8px',
+    },
+    downloadButton: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '6px 12px',
+      fontSize: '13px',
+      fontWeight: 500,
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '6px',
+      backgroundColor: colors.buttonBg,
+      color: colors.buttonText,
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    downloadDropdown: {
+      position: 'absolute' as const,
+      top: '100%',
+      right: 0,
+      marginTop: '6px',
+      backgroundColor: colors.bgTertiary,
+      border: `1px solid ${colors.borderSecondary}`,
+      borderRadius: '8px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+      zIndex: 1000,
+      minWidth: '280px',
+      overflow: 'hidden',
+    },
+    downloadOption: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '12px',
+      width: '100%',
+      padding: '12px 16px',
+      border: 'none',
+      backgroundColor: 'transparent',
+      color: colors.textPrimary,
+      cursor: 'pointer',
+      textAlign: 'left' as const,
+      transition: 'background-color 0.2s',
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+    },
+    downloadOptionText: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '2px',
+    },
+    downloadOptionTitle: {
+      fontSize: '14px',
+      fontWeight: 500,
+      color: colors.textPrimary,
+    },
+    downloadOptionDesc: {
+      fontSize: '12px',
       color: colors.textMuted,
     },
   };
