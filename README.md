@@ -6,6 +6,10 @@ A lightweight, local web application for exploring Kubernetes logs across multip
 
 - [Important: Cluster Configuration](#important-cluster-configuration)
 - [Features](#features)
+  - [Core Features](#core-features)
+  - [Log Viewing & Management](#log-viewing--management)
+  - [Search & Navigation](#search--navigation)
+  - [UI & Theming](#ui--theming)
 - [Requirements](#requirements)
 - [Installation & Run Guide](#installation--run-guide)
   - [Step 1: Prerequisites Check](#step-1-prerequisites-check)
@@ -18,18 +22,18 @@ A lightweight, local web application for exploring Kubernetes logs across multip
   - [Step 8: Verify Everything Works](#step-8-verify-everything-works)
 - [Running in Production Mode](#running-in-production-mode)
 - [Stopping the Application](#stopping-the-application)
-- [Usage](#usage)
+- [Usage Guide](#usage-guide)
+  - [Basic Workflow](#basic-workflow)
   - [Viewing Logs](#viewing-logs)
   - [Searching Logs](#searching-logs)
   - [Time Navigation](#time-navigation)
+  - [Log Filtering](#log-filtering)
   - [Auto-Refresh](#auto-refresh)
   - [Themes & UI Customization](#themes--ui-customization)
-  - [UI Features](#ui-features)
 - [Architecture](#architecture)
 - [API Reference](#api-reference)
 - [Storage & Retention](#storage--retention)
 - [Configuration Reference](#configuration-reference)
-- [Recent Updates](#recent-updates)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
 - [Development](#development)
@@ -51,21 +55,52 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 
 ## Features
 
-- **Multi-environment support**: Configure multiple Kubernetes clusters (sit, replica, prod)
-- **Full-text search**: SQLite FTS5-powered search across log messages with highlighted matches
-- **Time-based navigation**: Splunk-style log exploration with +5min/+10min windows
-- **Auto-refresh**: Configurable automatic log fetching (1m, 2m, 5m, 10m intervals)
-- **Storage management**: 100 MB cap with automatic cleanup of old logs
-- **Production warning**: Confirmation dialog when accessing production logs
-- **22 Beautiful Themes**: Dark and light themes including Bootstrap-inspired options (Darkly, Cyborg, Flatly, Cosmo, etc.)
-- **Bootstrap CSS**: Standardized styling with Bootstrap CSS for consistent fonts and colors
-- **Auto-hiding headers**: Table headers automatically hide when scrolling down for cleaner log viewing
-- **Log highlighting**: Error, warning, and exception logs are highlighted with color-coded backgrounds
-- **Batch log fetching**: Efficient batch fetching (500 logs per batch) with "Load More" pagination
-- **JSON formatting**: Automatic formatting of JSON payloads in log messages for better readability
-- **Multi-line log support**: Proper handling of Java stack traces and multi-line log entries
-- **Log filtering**: Configurable exclusion patterns to filter out unwanted logs (healthchecks, etc.)
-- **Copy to clipboard**: One-click copy of full log content for sharing and analysis
+### Core Features
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-Environment Support** | Configure multiple Kubernetes clusters (sit, replica, prod) with easy switching |
+| **Automatic Log Fetching** | ALL logs fetched automatically on pod selection - no manual "fetch all" needed |
+| **Full-Text Search** | SQLite FTS5-powered search with instant results and highlighted matches |
+| **Time-Based Navigation** | Splunk-style exploration with ±5min/±10min time windows |
+| **Auto-Refresh** | Configurable automatic log fetching (1m, 2m, 5m, 10m intervals) |
+| **Storage Management** | 100 MB cap with automatic cleanup of oldest logs |
+| **Production Warning** | Confirmation dialog when accessing production environments |
+
+### Log Viewing & Management
+
+| Feature | Description |
+|---------|-------------|
+| **Complete Log History** | Fetches ALL available logs from K8s (no artificial limits) |
+| **Paginated Display** | Shows 1000 logs per page with "Load More" for additional batches |
+| **Log Filtering** | Configurable exclusion patterns (healthchecks, probes, etc.) |
+| **Filter Toggle** | "Show All" button to temporarily disable filters and see all logs |
+| **Multi-line Support** | Proper handling of Java stack traces and multi-line entries |
+| **JSON Formatting** | Automatic pretty-printing of JSON payloads in log messages |
+| **Copy to Clipboard** | Floating "Copy" button on each log for easy sharing |
+| **Log Deduplication** | Hash-based deduplication prevents duplicate log storage |
+
+### Search & Navigation
+
+| Feature | Description |
+|---------|-------------|
+| **Full-Text Search** | FTS5-powered instant search across all log messages |
+| **Search Highlighting** | Matched terms highlighted in yellow for easy identification |
+| **Time Window Navigation** | Click any timestamp → navigate ±5min/±10min around it |
+| **Time Range Display** | Shows calculated start/end time for time window queries |
+| **Search Persistence** | Search automatically re-applied when switching pods |
+
+### UI & Theming
+
+| Feature | Description |
+|---------|-------------|
+| **22 Professional Themes** | 11 dark + 11 light themes including Bootstrap-inspired options |
+| **Bootstrap CSS** | Standardized styling for consistent fonts and colors |
+| **Auto-Hiding Headers** | Table headers hide when scrolling down, reappear at top |
+| **Severity Highlighting** | Error/Warning/Exception logs highlighted with color-coded backgrounds |
+| **Fixed Column Widths** | Timestamp and Pod columns maintain consistent width |
+| **Responsive Design** | Clean, modern interface optimized for log viewing |
+| **Millisecond Precision** | Timestamps display with millisecond accuracy |
 
 ## Requirements
 
@@ -232,10 +267,10 @@ You should see:
 ### Step 7: Access the Application
 
 1. Open your browser and navigate to: **http://localhost:5173**
-2. You should see the K8s Log Explorer interface
+2. You should see the K8S Log Explorer interface
 3. Select an environment from the dropdown
-4. Choose a namespace and service
-5. Click **Refresh** to fetch logs
+4. Choose a service and pod
+5. Logs will be fetched automatically!
 
 ### Step 8: Verify Everything Works
 
@@ -243,26 +278,33 @@ You should see:
    - Select different environments from dropdown
    - Each should load without errors
 
-2. **Test namespace/service discovery:**
+2. **Test service discovery:**
    - Select an environment
-   - Namespace dropdown should populate
-   - Select a namespace
-   - Service dropdown should populate
+   - Service dropdown should populate from K8s cluster
 
-3. **Test log fetching:**
-   - Select env, namespace, and service
-   - Click **Refresh**
-   - Logs should appear in the table
+3. **Test pod discovery:**
+   - Select a service
+   - Pod dropdown should show available pods with status
 
-4. **Test search:**
+4. **Test automatic log fetching:**
+   - Select a pod
+   - Logs should appear automatically (no manual refresh needed)
+   - Check log count display
+
+5. **Test search:**
    - Enter a search term
    - Press Enter or click Search
-   - Results should filter
+   - Results should filter with highlighted matches
 
-5. **Test time navigation:**
+6. **Test log filtering toggle:**
+   - If "(X filtered)" appears, click "Show All"
+   - All logs should display including filtered ones
+   - Click "Filtering Off" to re-enable filters
+
+7. **Test time navigation:**
    - Click any log timestamp
    - Use ±5m or ±10m buttons
-   - Logs should update to show time window
+   - Note the time range displayed
 
 ## Running in Production Mode
 
@@ -294,79 +336,104 @@ npm run preview
 2. **Stop backend:** Press `Ctrl+C` in the backend terminal
 3. **Clean up:** The database (`backend/logs.db`) persists between runs
 
-## Usage
+## Usage Guide
+
+### Basic Workflow
+
+```
+1. Select Environment (sit/replica/prod)
+        ↓
+2. Select Service (auto-populated from K8s)
+        ↓
+3. Select Pod (shows status: Running/Pending/etc.)
+        ↓
+4. Logs fetched automatically!
+        ↓
+5. Search, filter, navigate as needed
+```
 
 ### Viewing Logs
 
-1. Select an environment from the dropdown
-2. Choose a namespace and service
-3. Click **Refresh** to fetch logs from Kubernetes
-4. Logs display newest-first
+1. **Automatic Fetching**: Logs are fetched automatically when you select a pod
+2. **Complete History**: ALL available logs are fetched (no artificial limits)
+3. **Paginated Display**: First 1000 logs shown, click "Load More" for more
+4. **Newest First**: Logs display with newest at the top
+5. **Refresh Button**: Click ↻ to manually re-fetch latest logs
 
 ### Searching Logs
 
 - Enter search terms in the search bar
 - Press Enter or click Search
-- FTS5 supports phrase search with quotes: `"error occurred"`
+- **Highlighting**: Matched terms highlighted in yellow
+- **FTS5 Search**: Supports phrase search with quotes: `"error occurred"`
+- **Persistence**: Search re-applied automatically when changing pods
 
 ### Time Navigation
 
 1. Click any log timestamp
 2. Use the **±5m** or **±10m** buttons to view surrounding logs
-3. Or enter a custom time window
+3. Time range displayed: "Showing logs from X to Y"
+4. Or enter a custom time window
+5. Click "Clear Filter" to return to normal view
+
+### Log Filtering
+
+**Configured Exclusion Patterns** (in `frontend/src/config/logFilters.ts`):
+- Health check endpoints
+- Liveness/readiness probes
+- Metrics endpoints
+- Other noise patterns
+
+**Toggle Filtering:**
+1. When filters are active, you'll see "(X filtered)"
+2. Click **"👁 Show All"** to see all logs including filtered ones
+3. Button changes to **"🚫 Filtering Off"**
+4. Click again to re-enable filters
 
 ### Auto-Refresh
 
 1. Check the **Auto** checkbox
 2. Click ⚙ to adjust the refresh interval (1m, 2m, 5m, 10m)
-3. Logs will be fetched automatically from Kubernetes
+3. ALL logs will be fetched on each refresh cycle
 
 ### Themes & UI Customization
 
 The application includes **22 professional themes** for personalized viewing:
 
 #### Dark Themes (11)
-- **Classic Dark** - Original dark blue theme (default)
-- **Midnight** - Refined dark with soft blue undertones
-- **Ocean** - Deep blue with calming teal accents
-- **Forest** - Calming dark green theme
-- **Slate** - Professional gray tones
-- **Sunset** - Warm dark theme with orange accents
-- **Lavender** - Soft purple tones
-- **Coffee** - Warm sepia tones
-- **Darkly** - Bootstrap Darkly-inspired theme
-- **Cyborg** - Tech-inspired dark theme with cyan highlights
-- **Superhero** - Dark theme with orange accents
+| Theme | Description |
+|-------|-------------|
+| Classic Dark | Original dark blue theme (default) |
+| Midnight | Refined dark with soft blue undertones |
+| Ocean | Deep blue with calming teal accents |
+| Forest | Calming dark green theme |
+| Slate | Professional gray tones |
+| Sunset | Warm dark theme with orange accents |
+| Lavender | Soft purple tones |
+| Coffee | Warm sepia tones |
+| Darkly | Bootstrap Darkly-inspired |
+| Cyborg | Tech-inspired with cyan highlights |
+| Superhero | Dark with orange accents |
 
 #### Light Themes (11)
-- **Daylight** - Clean, warm light theme
-- **Arctic** - Cool light gray theme
-- **Paper** - Warm off-white theme
-- **Mint** - Fresh green-tinted light theme
-- **Rose** - Soft pink-tinted light theme
-- **Sky** - Blue-tinted light theme
-- **Sand** - Warm beige light theme
-- **Lavender Light** - Soft purple light theme
-- **Flatly** - Bootstrap Flatly-inspired flat design
-- **Cosmo** - Clean modern with blue accents
-- **United** - Light theme with Ubuntu-inspired orange
+| Theme | Description |
+|-------|-------------|
+| Daylight | Clean, warm light theme |
+| Arctic | Cool light gray theme |
+| Paper | Warm off-white theme |
+| Mint | Fresh green-tinted light theme |
+| Rose | Soft pink-tinted light theme |
+| Sky | Blue-tinted light theme |
+| Sand | Warm beige light theme |
+| Lavender Light | Soft purple light theme |
+| Flatly | Bootstrap Flatly-inspired flat design |
+| Cosmo | Clean modern with blue accents |
+| United | Ubuntu-inspired orange accents |
 
 **To change themes:**
 1. Click the **Theme** dropdown in the header
 2. Select your preferred theme
-3. Theme preference is saved in browser localStorage
-
-### UI Features
-
-- **Bootstrap CSS**: Standardized styling ensures consistent fonts, colors, and spacing across all components
-- **Auto-hiding headers**: Table headers automatically hide when scrolling down and reappear when scrolled to the top
-- **Log severity highlighting**: 
-  - Error logs: Red background with red text
-  - Warning logs: Orange/yellow background with orange text
-  - Exception logs: Pink background with pink text
-- **Search highlighting**: Matched search terms are highlighted in yellow for easy identification
-- **Responsive design**: Clean, modern interface optimized for log viewing
-- **Millisecond precision**: Timestamps display with millisecond precision for accurate log ordering
+3. Theme preference saved in browser localStorage
 
 ## Architecture
 
@@ -375,11 +442,11 @@ The application includes **22 professional themes** for personalized viewing:
 │    Frontend     │────▶│    Backend      │────▶│    kubectl      │
 │  React + Vite   │     │    FastAPI      │     │                 │
 └─────────────────┘     └────────┬────────┘     └─────────────────┘
-                                 │
-                        ┌────────▼────────┐
-                        │     SQLite      │
-                        │   + FTS5        │
-                        └─────────────────┘
+                                │
+                       ┌────────▼────────┐
+                       │     SQLite      │
+                       │   + FTS5        │
+                       └─────────────────┘
 ```
 
 ### Backend Structure
@@ -387,25 +454,57 @@ The application includes **22 professional themes** for personalized viewing:
 ```
 backend/
 ├── app/
-│   ├── main.py              # FastAPI entry point
-│   ├── config.py            # Environment config loader
-│   ├── database.py          # SQLite + FTS5 setup
-│   ├── models.py            # Pydantic models
+│   ├── main.py              # FastAPI entry point with lifespan management
+│   ├── config.py            # Environment config loader & app settings
+│   ├── database.py          # SQLite + FTS5 with thread-safe operations
+│   ├── models.py            # Pydantic models for API
 │   ├── routers/
 │   │   ├── envs.py          # /envs endpoints
 │   │   ├── logs.py          # /logs, /search, /logs/by-time
-│   │   ├── namespaces.py    # /namespaces, /services
+│   │   ├── namespaces.py    # /namespaces, /services, /pods
 │   │   └── refresh.py       # Auto-refresh control
 │   ├── services/
 │   │   ├── kubectl.py       # kubectl subprocess wrapper
-│   │   ├── log_collector.py # Log fetching & parsing
-│   │   ├── log_store.py     # Log queries
+│   │   ├── log_collector.py # Log fetching, parsing, multi-line handling
+│   │   ├── log_store.py     # Log queries & FTS5 search
 │   │   ├── retention.py     # Storage cap enforcement
-│   │   └── refresh_scheduler.py
+│   │   └── refresh_scheduler.py  # Background refresh tasks
 │   └── env-config/          # Environment YAML files
 ├── requirements.txt
-└── run.py
+└── run.py                   # Application entry point
 ```
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── api/
+│   │   └── client.ts        # API client with all endpoints
+│   ├── components/
+│   │   ├── LogTable.tsx     # Main log display with all features
+│   │   ├── SearchBar.tsx    # Search input with highlighting
+│   │   ├── TimeNavigation.tsx
+│   │   ├── EnvSelector.tsx
+│   │   ├── PodSelector.tsx
+│   │   ├── RefreshIndicator.tsx
+│   │   ├── SearchableSelect.tsx
+│   │   └── ThemeSelector.tsx
+│   ├── config/
+│   │   ├── themes.ts        # 22 theme definitions
+│   │   └── logFilters.ts    # Exclusion patterns
+│   ├── context/
+│   │   └── ThemeContext.tsx # Theme state management
+│   ├── hooks/
+│   │   └── useLogs.ts       # React Query hooks
+│   ├── App.tsx              # Main application component
+│   ├── main.tsx             # Entry point with providers
+│   └── index.css            # Global styles & Bootstrap overrides
+├── package.json
+└── vite.config.ts
+```
+
+For detailed architecture documentation, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 
 ## API Reference
 
@@ -414,10 +513,10 @@ backend/
 | `/health` | GET | Health check |
 | `/envs` | GET | List environments |
 | `/namespaces` | GET | List namespaces |
-| `/services` | GET | List services |
-| `/pods` | GET | List pods for a service |
-| `/logs` | GET | Get logs with filters (supports pagination with `limit` and `offset`) |
-| `/logs/fetch` | POST | Fetch logs from K8s (batch fetching, default 500 lines) |
+| `/services` | GET | List services in namespace |
+| `/pods` | GET | List pods for a service with status |
+| `/logs` | GET | Get logs with pagination (`limit`, `offset`) |
+| `/logs/fetch` | POST | Fetch logs from K8s (`fetchAll` for complete history) |
 | `/logs/search` | GET | Full-text search with FTS5 |
 | `/logs/by-time` | GET | Time-window query (±minutes around timestamp) |
 | `/logs/storage` | GET | Storage statistics |
@@ -426,14 +525,15 @@ backend/
 
 ## Storage & Retention
 
-- Database location: `backend/logs.db`
-- Maximum size: 100 MB (configurable in `config.py`)
-- Retention: Oldest logs deleted first when limit exceeded
-- VACUUM runs after deletion to reclaim space
+- **Database location**: `backend/logs.db`
+- **Maximum size**: 100 MB (configurable in `config.py`)
+- **Retention**: Oldest logs deleted first when limit exceeded
+- **VACUUM**: Runs after deletion to reclaim disk space
+- **WAL Mode**: Write-Ahead Logging for better concurrent performance
 
 ### Log Deduplication
 
-Logs are deduplicated using a hash of:
+Logs are deduplicated using a SHA-256 hash of:
 - Environment
 - Pod name
 - Container name
@@ -458,9 +558,10 @@ Logs are deduplicated using a hash of:
 |---------|---------|-------------|
 | `DATABASE_PATH` | `logs.db` | SQLite database file |
 | `MAX_DB_SIZE_MB` | 100 | Storage cap in megabytes |
-| `DEFAULT_LOG_LIMIT` | 500 | Default logs per query (matches batch size) |
-| `MAX_LOG_LIMIT` | 1000 | Maximum logs per query |
-| `BATCH_FETCH_SIZE` | 500 | Number of log lines fetched per batch from kubectl |
+| `DEFAULT_LOG_LIMIT` | 500 | Default logs per API query |
+| `MAX_LOG_LIMIT` | 10000 | Maximum logs per query |
+| `LOG_FETCH_BATCH_SIZE` | 5000 | Log lines fetched per kubectl call |
+| `LOG_FETCH_TIMEOUT` | 60 | Timeout for kubectl commands (seconds) |
 
 ### Log Filtering (`frontend/src/config/logFilters.ts`)
 
@@ -468,10 +569,14 @@ Configure patterns to exclude unwanted logs from display:
 
 ```typescript
 export const logFilterConfig = {
+  enabled: true,
   excludePatterns: [
     'healthcheck',
     'liveness probe',
     'readiness probe',
+    '/actuator/',
+    '/health',
+    '/metrics',
     // Add your custom patterns here
   ],
 };
@@ -510,8 +615,6 @@ cat backend/app/env-config/sit.yaml | grep kubectlContext
 kubectl --context sit-cluster get nodes
 ```
 
-**Solution:** Update your config files to match actual context names, or create the missing contexts (see [KUBECTL_SETUP.md](KUBECTL_SETUP.md)).
-
 ### "Unable to connect to the server"
 
 The kubectl context exists but cluster is unreachable:
@@ -527,63 +630,30 @@ ping <cluster-ip>
 kubectl --context sit-cluster auth can-i get pods
 ```
 
-**Solution:** Check network connectivity, verify cluster is running, and refresh credentials if needed.
+### Backend Segmentation Fault
 
-### "Unauthorized" or "Forbidden"
+If the backend crashes with "segmentation fault":
 
-Your credentials don't have permission:
+1. **Restart the backend** - this usually resolves temporary issues
+2. **Check for concurrent processes** - only one backend should run
+3. **Clear the database** if corrupted:
+   ```bash
+   rm backend/logs.db*
+   ```
 
-```bash
-# Check permissions
-kubectl --context sit-cluster auth can-i get pods
-kubectl --context sit-cluster auth can-i get logs
-kubectl --context sit-cluster auth can-i get services
-```
+The application includes robust handling for database concurrency using asyncio locks.
 
-**Required permissions:**
-- `get pods`
-- `get services`
-- `get logs`
-
-**Solution:** Contact your cluster administrator to grant necessary permissions.
-
-### "No pods found"
-
-The service may not have any running pods, or the selector doesn't match:
+### "No pods found" or "No logs"
 
 ```bash
 # Check service selector
-kubectl --context sit-cluster get svc <service> -n <namespace> -o yaml | grep selector
+kubectl --context sit-cluster get svc <service> -n <namespace> -o yaml
 
 # Check pods matching selector
 kubectl --context sit-cluster get pods -n <namespace> -l <selector>
 
-# Check all pods in namespace
-kubectl --context sit-cluster get pods -n <namespace>
-```
-
-**Solution:** Verify the service exists and has pods running. Check pod status with `kubectl get pods`.
-
-### "ModuleNotFoundError: No module named 'yaml'"
-
-Backend dependencies not installed:
-
-```bash
-cd backend
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### "npm ERR! code ENOTFOUND"
-
-Network issue or npm registry unreachable:
-
-```bash
-# Check npm configuration
-npm config get registry
-
-# Try with different registry or check network
-npm install --registry https://registry.npmjs.org/
+# Check pod logs directly
+kubectl --context sit-cluster logs <pod-name> -n <namespace>
 ```
 
 ### Database locked
@@ -596,36 +666,7 @@ lsof backend/logs.db
 
 # Kill existing Python processes if needed
 pkill -f "python.*run.py"
-pkill -f "uvicorn.*app.main"
 ```
-
-### Backend won't start
-
-Check for errors:
-
-```bash
-cd backend
-source venv/bin/activate
-
-# Test config loading
-python3 -c "from app.config import load_env_configs; load_env_configs()"
-
-# Test database init
-python3 -c "import asyncio; from app.database import init_database; asyncio.run(init_database())"
-```
-
-### Frontend shows "Failed to fetch" or connection errors
-
-1. **Verify backend is running:**
-   ```bash
-   curl http://127.0.0.1:8000/health
-   ```
-
-2. **Check CORS settings** in `backend/app/main.py` - ensure frontend URL is allowed
-
-3. **Check browser console** for detailed error messages
-
-4. **Verify proxy settings** in `frontend/vite.config.ts`
 
 ### Port already in use
 
@@ -637,41 +678,13 @@ lsof -ti:8000 | xargs kill -9
 lsof -ti:5173 | xargs kill -9
 ```
 
-## Recent Updates
-
-### UI & Theming Enhancements
-- ✅ **Bootstrap CSS Integration**: Standardized styling with Bootstrap CSS for consistent fonts, colors, and spacing
-- ✅ **22 Professional Themes**: Added comprehensive theme system with 11 dark and 11 light themes, including Bootstrap-inspired options (Darkly, Cyborg, Flatly, Cosmo, United, Superhero)
-- ✅ **Auto-hiding Table Headers**: Headers automatically hide when scrolling down and reappear when scrolled to the top
-- ✅ **Font Size Standardization**: All fonts standardized to Bootstrap-compliant sizes for better readability
-- ✅ **Theme Persistence**: Theme selection saved in browser localStorage
-
-### Log Viewing Improvements
-- ✅ **Batch Log Fetching**: Efficient batch fetching (500 logs per batch) with "Load More" pagination
-- ✅ **Search Highlighting**: Matched search terms highlighted in yellow for easy identification
-- ✅ **Log Severity Highlighting**: Error, warning, and exception logs highlighted with color-coded backgrounds
-- ✅ **JSON Formatting**: Automatic formatting of JSON payloads (`requestPayload`, `responsePayload`) in log messages
-- ✅ **Multi-line Log Support**: Proper handling of Java stack traces and multi-line log entries
-- ✅ **Millisecond Precision**: Timestamps display with millisecond precision for accurate log ordering
-
-### Performance & Stability
-- ✅ **Robust Backend Stability**: Fixed segmentation faults with improved subprocess handling and database concurrency control
-- ✅ **Graceful Shutdown**: Proper cleanup of background tasks and database connections on application shutdown
-- ✅ **Error Handling**: Comprehensive error handling for database operations and kubectl subprocess execution
-
-### UX Improvements
-- ✅ **Service → Pod Flow**: Improved UI flow: Environment → Service → Pod → Logs with automatic pod list fetching
-- ✅ **Log Count Visibility**: Display total number of logs retrieved with filtered count indicator
-- ✅ **Copy to Clipboard**: One-click copy of full log content for sharing and analysis
-- ✅ **Time Navigation Display**: Show calculated time range when using ±5min/±10min navigation
-- ✅ **Log Filtering**: Configurable exclusion patterns to filter out unwanted logs (healthchecks, etc.)
-
 ## Limitations
 
 - **Single user**: No authentication or multi-user support
 - **Local only**: Not designed for network deployment
-- **No streaming**: Logs are fetched on-demand, not streamed
+- **No streaming**: Logs are fetched on-demand, not streamed in real-time
 - **Label selector only**: Service-to-pod resolution uses label selectors
+- **macOS optimized**: Tested primarily on macOS
 
 ## Development
 
@@ -679,6 +692,7 @@ lsof -ti:5173 | xargs kill -9
 
 ```bash
 cd backend
+source venv/bin/activate
 pytest
 ```
 
@@ -687,6 +701,13 @@ pytest
 ```bash
 cd frontend
 npm run build
+```
+
+### Type Checking
+
+```bash
+cd frontend
+npm run build  # Includes TypeScript compilation
 ```
 
 ## License
