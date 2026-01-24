@@ -20,7 +20,7 @@ import {
   usePods,
 } from './hooks/useLogs';
 import { EnvConfig } from './api/client';
-import { filterLogs } from './config/logFilters';
+import { filterLogs, logFilterConfig } from './config/logFilters';
 
 type ViewMode = 'logs' | 'search' | 'time-window';
 
@@ -330,6 +330,7 @@ export default function App() {
             hasMore={hasMore}
             isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
             filteredCount={filteredCount}
+            filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
             onLoadMore={handleLoadMore}
             onTimeNavigate={handleTimeNavigate}
           />

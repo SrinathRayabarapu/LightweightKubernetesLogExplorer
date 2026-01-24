@@ -12,14 +12,16 @@ interface LogTableProps {
   hasMore: boolean;
   isLoading: boolean;
   filteredCount?: number; // Number of logs excluded by filters
+  filterPatterns?: string[]; // Patterns used for filtering
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], onLoadMore, onTimeNavigate }: LogTableProps) {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
+  const [showFilterTooltip, setShowFilterTooltip] = useState(false);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);
@@ -357,9 +359,27 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, o
           </span>
         )}
         {filteredCount > 0 && (
-          <span style={styles.filteredCount} title="Logs excluded by filter patterns (healthchecks, metrics, etc.)">
-            ({filteredCount} filtered)
-          </span>
+          <div
+            style={styles.filteredCountContainer}
+            onMouseEnter={() => setShowFilterTooltip(true)}
+            onMouseLeave={() => setShowFilterTooltip(false)}
+          >
+            <span style={styles.filteredCount}>
+              ({filteredCount} filtered)
+            </span>
+            {showFilterTooltip && filterPatterns.length > 0 && (
+              <div style={styles.filterTooltip}>
+                <div style={styles.filterTooltipTitle}>Filtered Patterns:</div>
+                <ul style={styles.filterTooltipList}>
+                  {filterPatterns.map((pattern, index) => (
+                    <li key={index} style={styles.filterTooltipItem}>
+                      <code style={styles.filterTooltipCode}>{pattern}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
         {isLoading && logs.length > 0 && (
           <div style={styles.loadingIndicator}>
@@ -484,11 +504,61 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: '#666',
   },
+  filteredCountContainer: {
+    position: 'relative',
+    display: 'inline-block',
+  },
   filteredCount: {
     fontSize: '12px',
     color: '#888',
     fontStyle: 'italic',
     cursor: 'help',
+  },
+  filterTooltip: {
+    position: 'absolute',
+    bottom: '100%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    marginBottom: '8px',
+    backgroundColor: '#1a1a2e',
+    border: '1px solid #444',
+    borderRadius: '6px',
+    padding: '12px',
+    minWidth: '250px',
+    maxWidth: '400px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
+    pointerEvents: 'none',
+  },
+  filterTooltipTitle: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#4a9eff',
+    marginBottom: '8px',
+    borderBottom: '1px solid #333',
+    paddingBottom: '6px',
+  },
+  filterTooltipList: {
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+    maxHeight: '200px',
+    overflowY: 'auto',
+  },
+  filterTooltipItem: {
+    fontSize: '11px',
+    color: '#ccc',
+    marginBottom: '6px',
+    paddingLeft: '8px',
+    lineHeight: '1.4',
+  },
+  filterTooltipCode: {
+    fontFamily: 'monospace',
+    backgroundColor: '#252540',
+    padding: '2px 6px',
+    borderRadius: '3px',
+    color: '#e0e0e0',
+    fontSize: '10px',
   },
   tableWrapper: {
     flex: 1,
