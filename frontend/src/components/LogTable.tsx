@@ -14,12 +14,14 @@ interface LogTableProps {
   isLoading: boolean;
   filteredCount?: number; // Number of logs excluded by filters
   filterPatterns?: string[]; // Patterns used for filtering
+  filtersEnabled?: boolean; // Whether log filters are currently applied
+  onToggleFilters?: () => void; // Callback to toggle log filters on/off
   searchQuery?: string; // Current search query for highlighting matches
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
@@ -496,6 +498,20 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                 ({filteredCount} filtered)
               </span>
             </div>
+            {onToggleFilters && (
+              <button
+                onClick={onToggleFilters}
+                style={{
+                  ...styles.filterToggleButton,
+                  backgroundColor: filtersEnabled ? theme.colors.buttonBg : theme.colors.accentSecondary,
+                  color: filtersEnabled ? theme.colors.textSecondary : '#fff',
+                  borderColor: filtersEnabled ? theme.colors.buttonBorder : theme.colors.accentSecondary,
+                }}
+                title={filtersEnabled ? 'Show all logs including filtered' : 'Hide filtered logs'}
+              >
+                {filtersEnabled ? '👁 Show All' : '🚫 Filtering Off'}
+              </button>
+            )}
             {showFilterTooltip && filterPatterns.length > 0 && tooltipPosition && (
               <div
                 ref={tooltipRef}
@@ -662,6 +678,16 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       color: colors.textMuted,
       fontStyle: 'italic' as const,
       cursor: 'help',
+    },
+    filterToggleButton: {
+      padding: '4px 10px',
+      fontSize: '12px',
+      fontWeight: 500,
+      border: '1px solid',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      whiteSpace: 'nowrap' as const,
     },
     filterTooltip: {
       position: 'fixed' as const,

@@ -40,6 +40,7 @@ export default function App() {
   const [selectedPod, setSelectedPod] = useState('');
   const [showFilters, setShowFilters] = useState(true); // Toggle filter visibility
   const [hoveredToggleButton, setHoveredToggleButton] = useState(false);
+  const [applyLogFilters, setApplyLogFilters] = useState(true); // Toggle log exclusion filters
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -224,10 +225,11 @@ export default function App() {
                        logsQuery;
 
   // Apply log exclusion filters to remove unwanted logs (healthchecks, etc.)
+  // User can toggle this off to see all logs including filtered ones
   const rawLogs = currentQuery.data?.logs || [];
-  const logs = filterLogs(rawLogs);
+  const logs = applyLogFilters ? filterLogs(rawLogs) : rawLogs;
   const total = currentQuery.data?.total || 0;
-  const filteredCount = rawLogs.length - logs.length;
+  const filteredCount = rawLogs.length - filterLogs(rawLogs).length; // Always calculate for display
   const hasMore = currentQuery.data?.hasMore || false;
 
   return (
@@ -411,6 +413,8 @@ export default function App() {
             isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
             filteredCount={filteredCount}
             filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
+            filtersEnabled={applyLogFilters}
+            onToggleFilters={() => setApplyLogFilters(!applyLogFilters)}
             searchQuery={activeSearch}
             onLoadMore={handleLoadMore}
             onTimeNavigate={handleTimeNavigate}
