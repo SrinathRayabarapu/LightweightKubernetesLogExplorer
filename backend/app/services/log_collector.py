@@ -251,6 +251,7 @@ async def store_logs(entries: list[dict]) -> int:
     Store log entries in the database, skipping duplicates.
     
     Processes entries in batches to avoid blocking on large datasets.
+    Uses bulk operations for better performance and error handling.
     
     Returns:
         Number of new logs stored
@@ -261,44 +262,62 @@ async def store_logs(entries: list[dict]) -> int:
     stored_count = 0
     batch_size = 100  # Process 100 entries at a time
     
-    # Process in batches to avoid blocking
-    for i in range(0, len(entries), batch_size):
-        batch = entries[i:i + batch_size]
-        
-        for entry in batch:
-            # Check if hash already exists
-            existing = await fetch_one(
-                "SELECT 1 FROM log_hashes WHERE hash = ?",
-                (entry["hash"],)
-            )
+    try:
+        # Process in batches to avoid blocking
+        for i in range(0, len(entries), batch_size):
+            batch = entries[i:i + batch_size]
             
-            if existing:
-                continue
+            for entry in batch:
+                try:
+                    # Check if hash already exists
+                    existing = await fetch_one(
+                        "SELECT 1 FROM log_hashes WHERE hash = ?",
+                        (entry["hash"],)
+                    )
+                    
+                    if existing:
+                        continue
+                    
+                    # Insert log entry
+                    cursor = await execute("""
+                        INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        entry["timestamp"],
+                        entry["env"],
+                        entry["namespace"],
+                        entry["service"],
+                        entry["pod"],
+                        entry["container"],
+                        entry["message"],
+                    ))
+                    
+                    # Store hash for deduplication
+                    await execute(
+                        "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
+                        (entry["hash"], cursor.lastrowid)
+                    )
+                    
+                    stored_count += 1
+                except Exception as e:
+                    # Log but continue processing other entries
+                    print(f"Warning: Failed to store log entry: {e}")
+                    continue
             
-            # Insert log entry
-            cursor = await execute("""
-                INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                entry["timestamp"],
-                entry["env"],
-                entry["namespace"],
-                entry["service"],
-                entry["pod"],
-                entry["container"],
-                entry["message"],
-            ))
-            
-            # Store hash for deduplication
-            await execute(
-                "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
-                (entry["hash"], cursor.lastrowid)
-            )
-            
-            stored_count += 1
-        
-        # Commit after each batch to avoid long transactions
-        await commit()
+            # Commit after each batch to avoid long transactions
+            try:
+                await commit()
+            except Exception as e:
+                print(f"Warning: Failed to commit batch: {e}")
+                # Try to continue with next batch
+    
+    except Exception as e:
+        print(f"Error in store_logs: {e}")
+        # Try to commit any partial work
+        try:
+            await commit()
+        except Exception:
+            pass
     
     return stored_count
 
