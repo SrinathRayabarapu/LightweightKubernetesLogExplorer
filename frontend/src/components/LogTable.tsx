@@ -24,6 +24,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
   const filterContainerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);
@@ -321,6 +323,26 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   }, [showFilterTooltip]);
 
   /**
+   * Handle showing tooltip with delay prevention.
+   */
+  const handleShowTooltip = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    setShowFilterTooltip(true);
+  };
+
+  /**
+   * Handle hiding tooltip with small delay to allow mouse movement.
+   */
+  const handleHideTooltip = () => {
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowFilterTooltip(false);
+    }, 100); // Small delay to allow mouse movement to tooltip
+  };
+
+  /**
    * Get row style based on severity for subtle background highlighting.
    */
   const getRowStyle = (severity: 'error' | 'warning' | 'exception' | null, isExpanded: boolean): React.CSSProperties => {
@@ -380,8 +402,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             <div
               ref={filterContainerRef}
               style={styles.filteredCountContainer}
-              onMouseEnter={() => setShowFilterTooltip(true)}
-              onMouseLeave={() => setShowFilterTooltip(false)}
+              onMouseEnter={handleShowTooltip}
+              onMouseLeave={handleHideTooltip}
             >
               <span style={styles.filteredCount}>
                 ({filteredCount} filtered)
@@ -389,14 +411,16 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             </div>
             {showFilterTooltip && filterPatterns.length > 0 && tooltipPosition && (
               <div
+                ref={tooltipRef}
+                data-filter-tooltip
                 style={{
                   ...styles.filterTooltip,
                   top: `${tooltipPosition.top}px`,
                   left: `${tooltipPosition.left}px`,
                   transform: 'translate(-50%, -100%)',
                 }}
-                onMouseEnter={() => setShowFilterTooltip(true)}
-                onMouseLeave={() => setShowFilterTooltip(false)}
+                onMouseEnter={handleShowTooltip}
+                onMouseLeave={handleHideTooltip}
               >
                 <div style={styles.filterTooltipTitle}>Filtered Patterns:</div>
                 <ul style={styles.filterTooltipList}>
@@ -555,9 +579,13 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '12px',
     minWidth: '250px',
     maxWidth: '400px',
+    maxHeight: '400px',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
     zIndex: 10001,
     pointerEvents: 'auto',
+    cursor: 'default',
+    display: 'flex',
+    flexDirection: 'column',
   },
   filterTooltipTitle: {
     fontSize: '12px',
@@ -571,8 +599,14 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     padding: 0,
     listStyle: 'none',
-    maxHeight: '200px',
+    maxHeight: '300px',
     overflowY: 'auto',
+    overflowX: 'hidden',
+    flex: 1,
+    paddingRight: '4px',
+    // Custom scrollbar styling for better visibility
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#444 #1a1a2e',
   },
   filterTooltipItem: {
     fontSize: '11px',
