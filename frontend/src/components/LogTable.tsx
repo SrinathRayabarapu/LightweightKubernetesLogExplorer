@@ -2,7 +2,7 @@
  * Log table component displaying log entries.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
 
@@ -22,6 +22,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);
@@ -304,6 +306,21 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   };
 
   /**
+   * Calculate tooltip position based on container element position.
+   */
+  useEffect(() => {
+    if (showFilterTooltip && filterContainerRef.current) {
+      const rect = filterContainerRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.top - 10, // Position above the element with gap
+        left: rect.left + rect.width / 2, // Center horizontally
+      });
+    } else {
+      setTooltipPosition(null);
+    }
+  }, [showFilterTooltip]);
+
+  /**
    * Get row style based on severity for subtle background highlighting.
    */
   const getRowStyle = (severity: 'error' | 'warning' | 'exception' | null, isExpanded: boolean): React.CSSProperties => {
@@ -359,16 +376,28 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
           </span>
         )}
         {filteredCount > 0 && (
-          <div
-            style={styles.filteredCountContainer}
-            onMouseEnter={() => setShowFilterTooltip(true)}
-            onMouseLeave={() => setShowFilterTooltip(false)}
-          >
-            <span style={styles.filteredCount}>
-              ({filteredCount} filtered)
-            </span>
-            {showFilterTooltip && filterPatterns.length > 0 && (
-              <div style={styles.filterTooltip}>
+          <>
+            <div
+              ref={filterContainerRef}
+              style={styles.filteredCountContainer}
+              onMouseEnter={() => setShowFilterTooltip(true)}
+              onMouseLeave={() => setShowFilterTooltip(false)}
+            >
+              <span style={styles.filteredCount}>
+                ({filteredCount} filtered)
+              </span>
+            </div>
+            {showFilterTooltip && filterPatterns.length > 0 && tooltipPosition && (
+              <div
+                style={{
+                  ...styles.filterTooltip,
+                  top: `${tooltipPosition.top}px`,
+                  left: `${tooltipPosition.left}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+                onMouseEnter={() => setShowFilterTooltip(true)}
+                onMouseLeave={() => setShowFilterTooltip(false)}
+              >
                 <div style={styles.filterTooltipTitle}>Filtered Patterns:</div>
                 <ul style={styles.filterTooltipList}>
                   {filterPatterns.map((pattern, index) => (
@@ -379,7 +408,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                 </ul>
               </div>
             )}
-          </div>
+          </>
         )}
         {isLoading && logs.length > 0 && (
           <div style={styles.loadingIndicator}>
@@ -485,6 +514,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    position: 'relative',
+    zIndex: 100,
+    overflow: 'visible',
   },
   countContainer: {
     display: 'flex',
@@ -507,6 +539,7 @@ const styles: Record<string, React.CSSProperties> = {
   filteredCountContainer: {
     position: 'relative',
     display: 'inline-block',
+    zIndex: 10000,
   },
   filteredCount: {
     fontSize: '12px',
@@ -515,11 +548,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'help',
   },
   filterTooltip: {
-    position: 'absolute',
-    bottom: '100%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    marginBottom: '8px',
+    position: 'fixed',
     backgroundColor: '#1a1a2e',
     border: '1px solid #444',
     borderRadius: '6px',
@@ -527,8 +556,8 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: '250px',
     maxWidth: '400px',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-    zIndex: 1000,
-    pointerEvents: 'none',
+    zIndex: 10001,
+    pointerEvents: 'auto',
   },
   filterTooltipTitle: {
     fontSize: '12px',
