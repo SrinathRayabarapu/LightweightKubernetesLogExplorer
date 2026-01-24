@@ -75,7 +75,9 @@ class RefreshScheduler:
         ]
     
     async def _refresh_service(self, sub: dict) -> dict:
-        """Refresh logs for a single service."""
+        """Refresh logs for a subscribed service."""
+        if not self._running:
+            return {"success": False, "error": "Scheduler stopped"}
         try:
             result = await collect_logs(
                 env=sub["env"],
@@ -92,26 +94,40 @@ class RefreshScheduler:
     async def _run_loop(self):
         """Main scheduler loop."""
         while self._running:
-            now = datetime.now()
-            
-            for key, sub in list(self._subscriptions.items()):
-                if sub["next_refresh"] and sub["next_refresh"] <= now:
-                    # Time to refresh
-                    result = await self._refresh_service(sub)
+            try:
+                now = datetime.now()
+                
+                for key, sub in list(self._subscriptions.items()):
+                    if not self._running:  # Check if we should stop
+                        break
                     
-                    # Update timing
-                    sub["last_refresh"] = now
-                    sub["next_refresh"] = now + timedelta(seconds=sub["interval"])
-                    
-                    if not result["success"]:
-                        # Only log failures, successes are silent
-                        print(f"Auto-refresh failed for {key}: {result.get('error', 'Unknown error')}")
-            
-            # Periodically enforce retention
-            await enforce_retention()
-            
-            # Sleep for a bit before checking again
-            await asyncio.sleep(10)
+                    if sub["next_refresh"] and sub["next_refresh"] <= now:
+                        # Time to refresh
+                        result = await self._refresh_service(sub)
+                        
+                        # Update timing
+                        sub["last_refresh"] = now
+                        sub["next_refresh"] = now + timedelta(seconds=sub["interval"])
+                        
+                        if not result["success"]:
+                            # Only log failures, successes are silent
+                            print(f"Auto-refresh failed for {key}: {result.get('error', 'Unknown error')}")
+                
+                # Periodically enforce retention
+                if self._running:
+                    await enforce_retention()
+                
+                # Sleep for a bit before checking again (with cancellation check)
+                if self._running:
+                    await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                # Expected when stopping
+                break
+            except Exception as e:
+                # Log unexpected errors but continue running
+                print(f"Scheduler loop error: {e}")
+                if self._running:
+                    await asyncio.sleep(10)
     
     def start(self):
         """Start the scheduler background task."""
@@ -123,15 +139,25 @@ class RefreshScheduler:
         print("Refresh scheduler started")
     
     async def stop(self):
-        """Stop the scheduler background task."""
+        """Stop the scheduler background task safely."""
         self._running = False
         if self._task:
             self._task.cancel()
             try:
-                await self._task
+                # Give the task time to clean up
+                await asyncio.wait_for(
+                    asyncio.shield(self._task),
+                    timeout=5.0
+                )
             except asyncio.CancelledError:
                 pass
-            self._task = None
+            except asyncio.TimeoutError:
+                print("Warning: Scheduler task did not stop in time")
+            except Exception as e:
+                print(f"Warning: Error stopping scheduler task: {e}")
+            finally:
+                self._task = None
+        self._subscriptions.clear()
         print("Refresh scheduler stopped")
 
 

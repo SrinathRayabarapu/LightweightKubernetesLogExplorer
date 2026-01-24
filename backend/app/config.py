@@ -73,6 +73,9 @@ class Settings:
     MAX_DB_SIZE_MB: int = 100
     DEFAULT_LOG_LIMIT: int = 100
     MAX_LOG_LIMIT: int = 1000
+    # Log fetching batch settings
+    LOG_FETCH_BATCH_SIZE: int = int(os.getenv("LOG_FETCH_BATCH_SIZE", "500"))  # Number of log lines per batch (for --tail)
+    LOG_FETCH_TIMEOUT: int = int(os.getenv("LOG_FETCH_TIMEOUT", "30"))  # Timeout per fetch in seconds
 
 
 settings = Settings()

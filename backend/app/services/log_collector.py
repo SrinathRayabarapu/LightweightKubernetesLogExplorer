@@ -1,11 +1,12 @@
 """Log collection and parsing service."""
 
+import asyncio
 import hashlib
 import re
 from datetime import datetime, timezone
 from typing import Optional
 
-from ..config import get_kubectl_context
+from ..config import get_kubectl_context, settings
 from ..database import fetch_one, execute, execute_many, commit
 from .kubectl import (
     get_service_selector,
@@ -249,6 +250,9 @@ async def store_logs(entries: list[dict]) -> int:
     """
     Store log entries in the database, skipping duplicates.
     
+    Processes entries in batches to avoid blocking on large datasets.
+    Uses bulk operations for better performance and error handling.
+    
     Returns:
         Number of new logs stored
     """
@@ -256,40 +260,65 @@ async def store_logs(entries: list[dict]) -> int:
         return 0
     
     stored_count = 0
+    batch_size = 100  # Process 100 entries at a time
     
-    for entry in entries:
-        # Check if hash already exists
-        existing = await fetch_one(
-            "SELECT 1 FROM log_hashes WHERE hash = ?",
-            (entry["hash"],)
-        )
-        
-        if existing:
-            continue
-        
-        # Insert log entry
-        cursor = await execute("""
-            INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            entry["timestamp"],
-            entry["env"],
-            entry["namespace"],
-            entry["service"],
-            entry["pod"],
-            entry["container"],
-            entry["message"],
-        ))
-        
-        # Store hash for deduplication
-        await execute(
-            "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
-            (entry["hash"], cursor.lastrowid)
-        )
-        
-        stored_count += 1
+    try:
+        # Process in batches to avoid blocking
+        for i in range(0, len(entries), batch_size):
+            batch = entries[i:i + batch_size]
+            
+            for entry in batch:
+                try:
+                    # Check if hash already exists
+                    existing = await fetch_one(
+                        "SELECT 1 FROM log_hashes WHERE hash = ?",
+                        (entry["hash"],)
+                    )
+                    
+                    if existing:
+                        continue
+                    
+                    # Insert log entry
+                    cursor = await execute("""
+                        INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        entry["timestamp"],
+                        entry["env"],
+                        entry["namespace"],
+                        entry["service"],
+                        entry["pod"],
+                        entry["container"],
+                        entry["message"],
+                    ))
+                    
+                    # Store hash for deduplication
+                    await execute(
+                        "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
+                        (entry["hash"], cursor.lastrowid)
+                    )
+                    
+                    stored_count += 1
+                except Exception as e:
+                    # Log but continue processing other entries
+                    print(f"Warning: Failed to store log entry: {e}")
+                    continue
+            
+            # Commit after each batch to avoid long transactions
+            try:
+                await commit()
+            except Exception as e:
+                print(f"Warning: Failed to commit batch: {e}")
+                # Try to continue with next batch
     
-    await commit()
+    except Exception as e:
+        print(f"Error in store_logs: {e}")
+        # Try to commit any partial work
+        try:
+            await commit()
+        except Exception:
+            pass
+    
     return stored_count
 
 
@@ -372,26 +401,32 @@ async def collect_logs(env: str, namespace: str, service: str, pod_filter: Optio
         latest_timestamp = last_timestamp
         pods_processed = 0
         
+        # Batch size configuration - limits log fetching to prevent hanging
+        batch_size = settings.LOG_FETCH_BATCH_SIZE
+        batch_timeout = settings.LOG_FETCH_TIMEOUT
+        
         for pod in pods:
             # Fetch logs from all pods regardless of status
             # Some pods might have logs even if not in Running/Succeeded state
             for container in pod["containers"]:
                 try:
-                    # Fetch logs with increased tail_lines for better coverage
-                    # When pod_filter is specified, last_timestamp is None, so we use --tail
+                    # Use batch_size to limit log fetching and prevent hanging
+                    # When pod_filter is specified, use --tail with batch_size to limit recent logs
+                    # When doing incremental fetch, use --since-time with timeout protection
                     raw_logs = await get_pod_logs(
                         context=context,
                         namespace=namespace,
                         pod=pod["name"],
                         container=container,
                         since_time=last_timestamp,
-                        tail_lines=10000,  # Increased from default 1000 to fetch more logs
+                        tail_lines=batch_size if pod_filter else None,  # Limit tail when fetching specific pod
+                        timeout=batch_timeout,
                     )
                     
                     if not raw_logs.strip():
                         continue
                     
-                    # Parse and store logs
+                    # Parse logs
                     entries = parse_logs(
                         raw_logs=raw_logs,
                         env=env,
@@ -404,6 +439,7 @@ async def collect_logs(env: str, namespace: str, service: str, pod_filter: Optio
                     if not entries:
                         continue
                     
+                    # Store logs immediately
                     stored = await store_logs(entries)
                     total_logs_stored += stored
                     
@@ -415,7 +451,10 @@ async def collect_logs(env: str, namespace: str, service: str, pod_filter: Optio
                 
                 except KubectlError as e:
                     # Silently skip pods/containers that can't be accessed
-                    # Common cases: container not started, permission issues, etc.
+                    # Common cases: container not started, permission issues, timeout, etc.
+                    continue
+                except asyncio.TimeoutError:
+                    # Timeout on fetch - continue with next container
                     continue
             
             pods_processed += 1

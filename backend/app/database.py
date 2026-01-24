@@ -1,13 +1,15 @@
 """SQLite database setup with FTS5 for full-text search."""
 
+import asyncio
 import aiosqlite
 from pathlib import Path
 from typing import Optional
 
 from .config import settings
 
-# Database connection pool (single connection for simplicity)
+# Database connection and lock for thread-safe access
 _db: Optional[aiosqlite.Connection] = None
+_db_lock = asyncio.Lock()
 
 
 def get_db_path() -> Path:
@@ -16,22 +18,44 @@ def get_db_path() -> Path:
 
 
 async def get_database() -> aiosqlite.Connection:
-    """Get the database connection, creating it if necessary."""
+    """
+    Get the database connection, creating it if necessary.
+    Uses a lock to prevent concurrent connection initialization.
+    """
     global _db
-    if _db is None:
-        _db = await aiosqlite.connect(get_db_path())
-        _db.row_factory = aiosqlite.Row
-        await _db.execute("PRAGMA journal_mode=WAL")
-        await _db.execute("PRAGMA synchronous=NORMAL")
+    
+    # Fast path: connection already exists
+    if _db is not None:
+        return _db
+    
+    # Slow path: need to create connection (with lock)
+    async with _db_lock:
+        # Double-check after acquiring lock
+        if _db is None:
+            _db = await aiosqlite.connect(
+                get_db_path(),
+                isolation_level=None,  # Autocommit mode for better concurrency
+            )
+            _db.row_factory = aiosqlite.Row
+            # WAL mode for better concurrent read/write performance
+            await _db.execute("PRAGMA journal_mode=WAL")
+            await _db.execute("PRAGMA synchronous=NORMAL")
+            # Increase busy timeout to handle concurrent access
+            await _db.execute("PRAGMA busy_timeout=5000")
     return _db
 
 
 async def close_database():
-    """Close the database connection."""
+    """Close the database connection safely."""
     global _db
-    if _db is not None:
-        await _db.close()
-        _db = None
+    async with _db_lock:
+        if _db is not None:
+            try:
+                await _db.close()
+            except Exception as e:
+                print(f"Warning: Error closing database: {e}")
+            finally:
+                _db = None
 
 
 async def init_database():
@@ -115,31 +139,51 @@ async def init_database():
 
 async def execute(query: str, params: tuple = ()) -> aiosqlite.Cursor:
     """Execute a query and return the cursor."""
-    db = await get_database()
-    return await db.execute(query, params)
+    try:
+        db = await get_database()
+        return await db.execute(query, params)
+    except aiosqlite.Error as e:
+        print(f"Database execute error: {e}")
+        raise
 
 
 async def execute_many(query: str, params_list: list[tuple]) -> None:
     """Execute a query with multiple parameter sets."""
-    db = await get_database()
-    await db.executemany(query, params_list)
+    try:
+        db = await get_database()
+        await db.executemany(query, params_list)
+    except aiosqlite.Error as e:
+        print(f"Database execute_many error: {e}")
+        raise
 
 
 async def fetch_one(query: str, params: tuple = ()) -> Optional[aiosqlite.Row]:
     """Fetch a single row."""
-    db = await get_database()
-    cursor = await db.execute(query, params)
-    return await cursor.fetchone()
+    try:
+        db = await get_database()
+        cursor = await db.execute(query, params)
+        return await cursor.fetchone()
+    except aiosqlite.Error as e:
+        print(f"Database fetch_one error: {e}")
+        raise
 
 
 async def fetch_all(query: str, params: tuple = ()) -> list[aiosqlite.Row]:
     """Fetch all rows."""
-    db = await get_database()
-    cursor = await db.execute(query, params)
-    return await cursor.fetchall()
+    try:
+        db = await get_database()
+        cursor = await db.execute(query, params)
+        return await cursor.fetchall()
+    except aiosqlite.Error as e:
+        print(f"Database fetch_all error: {e}")
+        raise
 
 
 async def commit():
     """Commit the current transaction."""
-    db = await get_database()
-    await db.commit()
+    try:
+        db = await get_database()
+        await db.commit()
+    except aiosqlite.Error as e:
+        print(f"Database commit error: {e}")
+        raise

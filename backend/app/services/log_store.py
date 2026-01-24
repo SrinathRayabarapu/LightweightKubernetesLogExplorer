@@ -12,7 +12,7 @@ async def get_logs(
     namespace: Optional[str] = None,
     service: Optional[str] = None,
     pod: Optional[str] = None,
-    limit: int = 100,
+    limit: int = 500,
     offset: int = 0,
 ) -> tuple[list[LogEntry], int]:
     """
