@@ -12,16 +12,11 @@ A lightweight, local web application for exploring Kubernetes logs across multip
   - [UI & Theming](#ui--theming)
 - [Requirements](#requirements)
 - [Installation & Run Guide](#installation--run-guide)
-  - [Step 1: Prerequisites Check](#step-1-prerequisites-check)
-  - [Step 2: Configure Kubernetes Clusters](#step-2-configure-kubernetes-clusters)
-  - [Step 3: Install Backend Dependencies](#step-3-install-backend-dependencies)
-  - [Step 4: Install Frontend Dependencies](#step-4-install-frontend-dependencies)
-  - [Step 5: Start the Backend Server](#step-5-start-the-backend-server)
-  - [Step 6: Start the Frontend Development Server](#step-6-start-the-frontend-development-server)
-  - [Step 7: Access the Application](#step-7-access-the-application)
-  - [Step 8: Verify Everything Works](#step-8-verify-everything-works)
+  - [macOS Installation Guide](#macos-installation-guide)
+  - [Windows Installation Guide](#windows-installation-guide)
 - [Running in Production Mode](#running-in-production-mode)
 - [Stopping the Application](#stopping-the-application)
+- [Quick Start Scripts](#quick-start-scripts)
 - [Usage Guide](#usage-guide)
   - [Basic Workflow](#basic-workflow)
   - [Viewing Logs](#viewing-logs)
@@ -107,12 +102,16 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 
 ## Requirements
 
-- macOS (tested on macOS 12+)
+- **macOS** (tested on macOS 12+) or **Windows** (Windows 10/11, non-admin users supported)
 - Python 3.10+
 - Node.js 18+
 - kubectl installed and configured with cluster access
 
 ## Installation & Run Guide
+
+> **Windows Users**: See [Windows Installation Guide](#windows-installation-guide) below for PowerShell-specific instructions.
+
+## macOS Installation Guide
 
 ### Step 1: Prerequisites Check
 
@@ -309,6 +308,251 @@ You should see:
    - Use ±5m or ±10m buttons
    - Note the time range displayed
 
+## Windows Installation Guide
+
+> **Note for Windows Users**: This guide is specifically for Windows (Windows 10/11) and supports non-admin users. All commands use PowerShell.
+
+### Step 1: Prerequisites Check (Windows)
+
+Open **PowerShell** (not Command Prompt) and verify you have all required tools:
+
+```powershell
+# Check Python version (need 3.10+)
+python --version
+
+# Check Node.js version (need 18+)
+node --version
+
+# Check kubectl installation
+kubectl version --client
+
+# Check kubectl can access clusters
+kubectl config get-contexts
+```
+
+**If any tool is missing:**
+
+- **Python**: Download from https://www.python.org/downloads/ (check "Add Python to PATH" during installation)
+- **Node.js**: Download from https://nodejs.org/ (LTS version recommended)
+- **kubectl**: Download from https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/ or use Chocolatey: `choco install kubernetes-cli`
+
+### Step 2: Configure Kubernetes Clusters (Windows)
+
+**Important:** This application uses kubectl contexts for cluster access. Cluster IPs, tokens, and certificates are configured in kubectl, NOT in the application config files.
+
+#### 2.1. Set Up kubectl Contexts (Windows)
+
+**Option A: Use the provided PowerShell script (Recommended)**
+
+1. Open PowerShell in the project directory
+2. Run the setup script:
+
+```powershell
+# Make sure you're in the project root directory
+.\setup-kubectl-contexts.ps1
+```
+
+**Option B: Manual Configuration**
+
+If you prefer to configure manually:
+
+```powershell
+# List existing contexts
+kubectl config get-contexts
+
+# Configure SIT cluster
+kubectl config set-cluster sit-cluster --server=https://10.167.166.26:6443 --insecure-skip-tls-verify=true
+kubectl config set-credentials sit-user --token=<your-sit-token>
+kubectl config set-context sit-cluster --cluster=sit-cluster --user=sit-user --namespace=jio-t2r-ms
+
+# Configure REPLICA cluster
+kubectl config set-cluster replica-cluster --server=https://10.166.132.10:6443 --insecure-skip-tls-verify=true
+kubectl config set-credentials replica-user --token=<your-replica-token>
+kubectl config set-context replica-cluster --cluster=replica-cluster --user=replica-user --namespace=jio-t2r-ms
+
+# Configure PRODUCTION cluster
+kubectl config set-cluster prod-cluster --server=https://10.166.16.95:6443 --insecure-skip-tls-verify=true
+kubectl config set-credentials prod-user --token=<your-prod-token>
+kubectl config set-context prod-cluster --cluster=prod-cluster --user=prod-user --namespace=jio-t2r-ms
+```
+
+#### 2.2. Update Environment Config Files (Windows)
+
+Edit the config files using any text editor (Notepad, VS Code, etc.):
+
+```powershell
+# Using VS Code (if installed)
+code backend\app\env-config\sit.yaml
+code backend\app\env-config\replica.yaml
+code backend\app\env-config\prod.yaml
+
+# Or using Notepad
+notepad backend\app\env-config\sit.yaml
+```
+
+Each file should have:
+```yaml
+envName: sit                    # Environment name
+kubectlContext: sit-cluster     # Must match kubectl context name exactly
+defaultNamespace: jio-t2r-ms
+allowedNamespaces:              # Optional: restrict visible namespaces
+  - jio-t2r-ms
+refreshInterval: 300            # Auto-refresh interval in seconds
+```
+
+**Verify context names match:**
+```powershell
+# Check your kubectl contexts
+kubectl config get-contexts
+
+# Test each context
+kubectl --context sit-cluster get nodes
+kubectl --context prod-cluster get nodes
+```
+
+### Step 3: Install Backend Dependencies (Windows)
+
+```powershell
+cd backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment (PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# If you get an execution policy error, run this first:
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Install Python dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Verify installation
+python -c "import fastapi, uvicorn, yaml, aiosqlite; print('All dependencies installed')"
+```
+
+**Note:** If you encounter "execution policy" errors when activating the virtual environment, run:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+This allows PowerShell scripts to run for your user account only (no admin required).
+
+### Step 4: Install Frontend Dependencies (Windows)
+
+```powershell
+cd frontend
+
+# Install Node.js dependencies
+npm install
+
+# Verify installation
+npm list --depth=0
+```
+
+### Step 5: Start the Backend Server (Windows)
+
+```powershell
+cd backend
+.\venv\Scripts\Activate.ps1  # If not already activated
+
+# Start the FastAPI server
+python run.py
+```
+
+You should see:
+```
+Loading environment configurations...
+Loaded 3 environment(s): sit, replica, prod
+Initializing database...
+Database initialized successfully
+Starting refresh scheduler...
+Refresh scheduler started
+INFO:     Started server process [xxxxx]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000
+```
+
+**Verify backend is running:**
+```powershell
+# In another PowerShell window
+curl http://127.0.0.1:8000/health
+# Should return: {"status":"healthy","app":"K8s Log Explorer","version":"1.0.0"}
+```
+
+### Step 6: Start the Frontend Development Server (Windows)
+
+Open a **new PowerShell window** (keep backend running):
+
+```powershell
+cd frontend
+
+# Start Vite dev server
+npm run dev
+```
+
+You should see:
+```
+  VITE v5.x.x  ready in xxx ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+```
+
+### Step 7: Access the Application (Windows)
+
+1. Open your browser and navigate to: **http://localhost:5173**
+2. You should see the K8S Log Explorer interface
+3. Select an environment from the dropdown
+4. Choose a service and pod
+5. Logs will be fetched automatically!
+
+### Step 8: Verify Everything Works (Windows)
+
+Run the verification script:
+
+```powershell
+# From project root directory
+.\verify-setup.ps1
+```
+
+Or manually test:
+1. **Test environment loading:** Select different environments from dropdown
+2. **Test service discovery:** Select an environment → Service dropdown should populate
+3. **Test pod discovery:** Select a service → Pod dropdown should show available pods
+4. **Test automatic log fetching:** Select a pod → Logs should appear automatically
+5. **Test search:** Enter a search term → Results should filter with highlighted matches
+6. **Test Excel download:** Click Download dropdown → Test both filtered and all logs options
+
+### Troubleshooting Windows Issues
+
+**PowerShell Execution Policy Error:**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+**Python not found:**
+- Make sure Python is added to PATH during installation
+- Restart PowerShell after installing Python
+- Try `python` instead of `python3` on Windows
+
+**Virtual environment activation fails:**
+- Make sure you're using PowerShell (not CMD)
+- Run: `.\venv\Scripts\Activate.ps1` (not `activate`)
+
+**Port already in use:**
+```powershell
+# Backend (port 8000)
+netstat -ano | findstr :8000
+# Kill process using PID from above command
+taskkill /PID <pid> /F
+
+# Frontend (port 5173)
+netstat -ano | findstr :5173
+taskkill /PID <pid> /F
+```
+
 ## Running in Production Mode
 
 ### Backend
@@ -335,9 +579,97 @@ npm run preview
 
 ## Stopping the Application
 
+### Manual Stop
+
 1. **Stop frontend:** Press `Ctrl+C` in the frontend terminal
 2. **Stop backend:** Press `Ctrl+C` in the backend terminal
 3. **Clean up:** The database (`backend/logs.db`) persists between runs
+
+### Using Stop Scripts
+
+**macOS/Linux:**
+```bash
+./stop.sh
+```
+
+**Windows:**
+```powershell
+.\stop.ps1
+```
+
+## Quick Start Scripts
+
+For convenience, startup and shutdown scripts are provided to quickly start and stop all services.
+
+### macOS/Linux
+
+**Start all services:**
+```bash
+./start.sh
+```
+
+**Stop all services:**
+```bash
+./stop.sh
+```
+
+**What the scripts do:**
+- `start.sh`: 
+  - Checks prerequisites (Python, Node.js, kubectl)
+  - Starts backend server in background
+  - Starts frontend server in background
+  - Saves process IDs for clean shutdown
+  - Logs are written to `logs/backend.log` and `logs/frontend.log`
+
+- `stop.sh`:
+  - Gracefully stops both services
+  - Cleans up PID files
+  - Optionally kills processes on ports 8000/5173 if still running
+
+**View logs:**
+```bash
+# Backend logs
+tail -f logs/backend.log
+
+# Frontend logs
+tail -f logs/frontend.log
+```
+
+### Windows
+
+**Start all services:**
+```powershell
+.\start.ps1
+```
+
+**Stop all services:**
+```powershell
+.\stop.ps1
+```
+
+**What the scripts do:**
+- `start.ps1`: 
+  - Checks prerequisites (Python, Node.js, kubectl)
+  - Starts backend server in background
+  - Starts frontend server in background
+  - Saves process IDs for clean shutdown
+  - Logs are written to `logs\backend.log` and `logs\frontend.log`
+
+- `stop.ps1`:
+  - Gracefully stops both services
+  - Cleans up PID files
+  - Optionally kills processes on ports 8000/5173 if still running
+
+**View logs:**
+```powershell
+# Backend logs (live)
+Get-Content logs\backend.log -Wait
+
+# Frontend logs (live)
+Get-Content logs\frontend.log -Wait
+```
+
+**Note:** The scripts create a `logs/` directory automatically. PID files (`.backend.pid`, `.frontend.pid`) are stored in the project root for process management.
 
 ## Usage Guide
 
