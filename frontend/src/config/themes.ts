@@ -1,6 +1,6 @@
 /**
  * Theme configuration for K8s Log Explorer.
- * Contains multiple color themes that can be applied to the UI.
+ * Contains refined, eye-friendly color themes optimized for extended use.
  */
 
 export interface Theme {
@@ -60,450 +60,450 @@ export interface Theme {
 }
 
 export const themes: Record<string, Theme> = {
-  // Default dark theme (current)
-  dark: {
-    id: 'dark',
-    name: '🌙 Dark',
+  // Midnight - Refined dark theme with soft blue undertones
+  midnight: {
+    id: 'midnight',
+    name: 'Midnight',
     colors: {
-      bgPrimary: '#1a1a2e',
-      bgSecondary: '#16162a',
-      bgTertiary: '#1f1f35',
-      bgHover: '#252540',
-      bgSelected: '#3a3a5a',
+      bgPrimary: '#1e2128',
+      bgSecondary: '#181b20',
+      bgTertiary: '#252a33',
+      bgHover: '#2d333d',
+      bgSelected: '#363d4a',
       
-      textPrimary: '#eee',
-      textSecondary: '#aaa',
-      textMuted: '#888',
-      textAccent: '#fff',
+      textPrimary: '#e6e8eb',
+      textSecondary: '#a8adb5',
+      textMuted: '#6b7280',
+      textAccent: '#ffffff',
       
-      borderPrimary: '#333',
-      borderSecondary: '#444',
+      borderPrimary: '#2d333d',
+      borderSecondary: '#3d4450',
       
-      accentPrimary: '#4a9eff',
-      accentSecondary: '#6cb6ff',
+      accentPrimary: '#6b9fff',
+      accentSecondary: '#8bb4ff',
       
-      error: '#ff6b6b',
+      error: '#f87171',
+      errorBg: '#2d2023',
+      warning: '#fbbf24',
+      warningBg: '#2d2920',
+      success: '#4ade80',
+      successBg: '#202d23',
+      exception: '#fb7185',
+      exceptionBg: '#2d2025',
+      
+      timestamp: '#6b9fff',
+      podName: '#e6e8eb',
+      containerName: '#6b7280',
+      searchHighlight: '#fbbf24',
+      searchHighlightText: '#1e2128',
+      
+      buttonBg: '#2d333d',
+      buttonBgHover: '#3d4450',
+      buttonText: '#a8adb5',
+      buttonBorder: '#3d4450',
+      
+      inputBg: '#252a33',
+      inputBorder: '#3d4450',
+      inputText: '#e6e8eb',
+      inputPlaceholder: '#6b7280',
+    },
+  },
+
+  // Daylight - Clean, warm light theme easy on the eyes
+  daylight: {
+    id: 'daylight',
+    name: 'Daylight',
+    colors: {
+      bgPrimary: '#fafafa',
+      bgSecondary: '#f0f0f0',
+      bgTertiary: '#ffffff',
+      bgHover: '#e8e8e8',
+      bgSelected: '#e0e0e0',
+      
+      textPrimary: '#2d3748',
+      textSecondary: '#4a5568',
+      textMuted: '#718096',
+      textAccent: '#1a202c',
+      
+      borderPrimary: '#e2e8f0',
+      borderSecondary: '#cbd5e0',
+      
+      accentPrimary: '#3182ce',
+      accentSecondary: '#4299e1',
+      
+      error: '#e53e3e',
+      errorBg: '#fff5f5',
+      warning: '#d69e2e',
+      warningBg: '#fffff0',
+      success: '#38a169',
+      successBg: '#f0fff4',
+      exception: '#d53f8c',
+      exceptionBg: '#fff5f7',
+      
+      timestamp: '#3182ce',
+      podName: '#2d3748',
+      containerName: '#718096',
+      searchHighlight: '#faf089',
+      searchHighlightText: '#1a202c',
+      
+      buttonBg: '#edf2f7',
+      buttonBgHover: '#e2e8f0',
+      buttonText: '#4a5568',
+      buttonBorder: '#cbd5e0',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#cbd5e0',
+      inputText: '#2d3748',
+      inputPlaceholder: '#a0aec0',
+    },
+  },
+
+  // Ocean - Deep blue with calming teal accents
+  ocean: {
+    id: 'ocean',
+    name: 'Ocean',
+    colors: {
+      bgPrimary: '#0f172a',
+      bgSecondary: '#0c1322',
+      bgTertiary: '#1e293b',
+      bgHover: '#273549',
+      bgSelected: '#334155',
+      
+      textPrimary: '#e2e8f0',
+      textSecondary: '#94a3b8',
+      textMuted: '#64748b',
+      textAccent: '#f8fafc',
+      
+      borderPrimary: '#1e293b',
+      borderSecondary: '#334155',
+      
+      accentPrimary: '#22d3ee',
+      accentSecondary: '#67e8f9',
+      
+      error: '#fb7185',
+      errorBg: '#1f1b24',
+      warning: '#fcd34d',
+      warningBg: '#1f1d18',
+      success: '#4ade80',
+      successBg: '#151f1a',
+      exception: '#f472b6',
+      exceptionBg: '#1f1820',
+      
+      timestamp: '#22d3ee',
+      podName: '#e2e8f0',
+      containerName: '#64748b',
+      searchHighlight: '#fcd34d',
+      searchHighlightText: '#0f172a',
+      
+      buttonBg: '#1e293b',
+      buttonBgHover: '#334155',
+      buttonText: '#94a3b8',
+      buttonBorder: '#334155',
+      
+      inputBg: '#1e293b',
+      inputBorder: '#334155',
+      inputText: '#e2e8f0',
+      inputPlaceholder: '#64748b',
+    },
+  },
+
+  // Forest - Calming dark green theme
+  forest: {
+    id: 'forest',
+    name: 'Forest',
+    colors: {
+      bgPrimary: '#1a1f1c',
+      bgSecondary: '#151917',
+      bgTertiary: '#222923',
+      bgHover: '#2a322c',
+      bgSelected: '#343d36',
+      
+      textPrimary: '#e8ece9',
+      textSecondary: '#a3b0a7',
+      textMuted: '#6b7a6f',
+      textAccent: '#ffffff',
+      
+      borderPrimary: '#2a322c',
+      borderSecondary: '#3d4840',
+      
+      accentPrimary: '#6ee7b7',
+      accentSecondary: '#a7f3d0',
+      
+      error: '#fca5a5',
+      errorBg: '#2a2220',
+      warning: '#fcd34d',
+      warningBg: '#2a2820',
+      success: '#86efac',
+      successBg: '#1f2a22',
+      exception: '#f9a8d4',
+      exceptionBg: '#2a2024',
+      
+      timestamp: '#6ee7b7',
+      podName: '#e8ece9',
+      containerName: '#6b7a6f',
+      searchHighlight: '#fcd34d',
+      searchHighlightText: '#1a1f1c',
+      
+      buttonBg: '#2a322c',
+      buttonBgHover: '#3d4840',
+      buttonText: '#a3b0a7',
+      buttonBorder: '#3d4840',
+      
+      inputBg: '#222923',
+      inputBorder: '#3d4840',
+      inputText: '#e8ece9',
+      inputPlaceholder: '#6b7a6f',
+    },
+  },
+
+  // Slate - Professional gray tones
+  slate: {
+    id: 'slate',
+    name: 'Slate',
+    colors: {
+      bgPrimary: '#1c1c1e',
+      bgSecondary: '#161618',
+      bgTertiary: '#242426',
+      bgHover: '#2c2c2e',
+      bgSelected: '#3a3a3c',
+      
+      textPrimary: '#f5f5f7',
+      textSecondary: '#a1a1a6',
+      textMuted: '#6e6e73',
+      textAccent: '#ffffff',
+      
+      borderPrimary: '#2c2c2e',
+      borderSecondary: '#3a3a3c',
+      
+      accentPrimary: '#0a84ff',
+      accentSecondary: '#5ac8fa',
+      
+      error: '#ff6961',
       errorBg: '#2a1f1f',
-      warning: '#ffaa00',
-      warningBg: '#2a241f',
-      success: '#51cf66',
-      successBg: '#1f2a1f',
-      exception: '#ff6b9d',
+      warning: '#ffd60a',
+      warningBg: '#2a2810',
+      success: '#32d74b',
+      successBg: '#1a2a1f',
+      exception: '#ff6482',
       exceptionBg: '#2a1f22',
       
-      timestamp: '#6cb6ff',
-      podName: '#e0e0e0',
-      containerName: '#888',
-      searchHighlight: '#ffeb3b',
-      searchHighlightText: '#000',
+      timestamp: '#5ac8fa',
+      podName: '#f5f5f7',
+      containerName: '#6e6e73',
+      searchHighlight: '#ffd60a',
+      searchHighlightText: '#1c1c1e',
       
-      buttonBg: '#2a2a40',
-      buttonBgHover: '#3a3a5a',
-      buttonText: '#ccc',
-      buttonBorder: '#444',
+      buttonBg: '#2c2c2e',
+      buttonBgHover: '#3a3a3c',
+      buttonText: '#a1a1a6',
+      buttonBorder: '#3a3a3c',
       
-      inputBg: '#2a2a40',
-      inputBorder: '#333',
-      inputText: '#eee',
-      inputPlaceholder: '#666',
+      inputBg: '#242426',
+      inputBorder: '#3a3a3c',
+      inputText: '#f5f5f7',
+      inputPlaceholder: '#6e6e73',
     },
   },
 
-  // Light theme
-  light: {
-    id: 'light',
-    name: '☀️ Light',
+  // Sunset - Warm dark theme with orange accents
+  sunset: {
+    id: 'sunset',
+    name: 'Sunset',
     colors: {
-      bgPrimary: '#ffffff',
-      bgSecondary: '#f5f5f5',
-      bgTertiary: '#fafafa',
-      bgHover: '#f0f0f0',
-      bgSelected: '#e8e8e8',
+      bgPrimary: '#1f1a18',
+      bgSecondary: '#181513',
+      bgTertiary: '#28221f',
+      bgHover: '#332b27',
+      bgSelected: '#3d3430',
       
-      textPrimary: '#1a1a1a',
-      textSecondary: '#555',
-      textMuted: '#888',
-      textAccent: '#000',
+      textPrimary: '#f5ebe6',
+      textSecondary: '#b8a99e',
+      textMuted: '#7a6e66',
+      textAccent: '#ffffff',
       
-      borderPrimary: '#e0e0e0',
-      borderSecondary: '#ccc',
+      borderPrimary: '#332b27',
+      borderSecondary: '#4a403a',
       
-      accentPrimary: '#0066cc',
-      accentSecondary: '#0088ff',
+      accentPrimary: '#fb923c',
+      accentSecondary: '#fdba74',
       
-      error: '#d32f2f',
-      errorBg: '#ffebee',
-      warning: '#f57c00',
-      warningBg: '#fff3e0',
-      success: '#388e3c',
-      successBg: '#e8f5e9',
-      exception: '#c2185b',
-      exceptionBg: '#fce4ec',
+      error: '#f87171',
+      errorBg: '#2d201f',
+      warning: '#facc15',
+      warningBg: '#2d2918',
+      success: '#4ade80',
+      successBg: '#1d2a1f',
+      exception: '#fb7185',
+      exceptionBg: '#2d1f22',
       
-      timestamp: '#0066cc',
-      podName: '#333',
-      containerName: '#666',
-      searchHighlight: '#ffeb3b',
-      searchHighlightText: '#000',
+      timestamp: '#fb923c',
+      podName: '#f5ebe6',
+      containerName: '#7a6e66',
+      searchHighlight: '#facc15',
+      searchHighlightText: '#1f1a18',
       
-      buttonBg: '#f5f5f5',
-      buttonBgHover: '#e8e8e8',
-      buttonText: '#333',
-      buttonBorder: '#ccc',
+      buttonBg: '#332b27',
+      buttonBgHover: '#4a403a',
+      buttonText: '#b8a99e',
+      buttonBorder: '#4a403a',
       
-      inputBg: '#fff',
-      inputBorder: '#ccc',
-      inputText: '#333',
-      inputPlaceholder: '#999',
+      inputBg: '#28221f',
+      inputBorder: '#4a403a',
+      inputText: '#f5ebe6',
+      inputPlaceholder: '#7a6e66',
     },
   },
 
-  // Dracula theme
-  dracula: {
-    id: 'dracula',
-    name: '🧛 Dracula',
+  // Lavender - Soft purple tones, gentle on eyes
+  lavender: {
+    id: 'lavender',
+    name: 'Lavender',
     colors: {
-      bgPrimary: '#282a36',
-      bgSecondary: '#21222c',
-      bgTertiary: '#2d2f3d',
-      bgHover: '#44475a',
-      bgSelected: '#44475a',
+      bgPrimary: '#1e1b23',
+      bgSecondary: '#18161c',
+      bgTertiary: '#26222d',
+      bgHover: '#302b38',
+      bgSelected: '#3a3444',
       
-      textPrimary: '#f8f8f2',
-      textSecondary: '#bfbfbf',
-      textMuted: '#6272a4',
-      textAccent: '#fff',
+      textPrimary: '#ede8f5',
+      textSecondary: '#a8a0b8',
+      textMuted: '#706882',
+      textAccent: '#ffffff',
       
-      borderPrimary: '#44475a',
-      borderSecondary: '#6272a4',
+      borderPrimary: '#302b38',
+      borderSecondary: '#443d50',
       
-      accentPrimary: '#bd93f9',
-      accentSecondary: '#ff79c6',
+      accentPrimary: '#a78bfa',
+      accentSecondary: '#c4b5fd',
       
-      error: '#ff5555',
-      errorBg: '#3d2a2a',
-      warning: '#f1fa8c',
-      warningBg: '#3d3a2a',
-      success: '#50fa7b',
-      successBg: '#2a3d2a',
-      exception: '#ff79c6',
-      exceptionBg: '#3d2a35',
+      error: '#fca5a5',
+      errorBg: '#2a1f22',
+      warning: '#fcd34d',
+      warningBg: '#2a2720',
+      success: '#86efac',
+      successBg: '#1f2a22',
+      exception: '#f9a8d4',
+      exceptionBg: '#2a1f28',
       
-      timestamp: '#8be9fd',
-      podName: '#f8f8f2',
-      containerName: '#6272a4',
-      searchHighlight: '#f1fa8c',
-      searchHighlightText: '#282a36',
+      timestamp: '#a78bfa',
+      podName: '#ede8f5',
+      containerName: '#706882',
+      searchHighlight: '#fcd34d',
+      searchHighlightText: '#1e1b23',
       
-      buttonBg: '#44475a',
-      buttonBgHover: '#6272a4',
-      buttonText: '#f8f8f2',
-      buttonBorder: '#6272a4',
+      buttonBg: '#302b38',
+      buttonBgHover: '#443d50',
+      buttonText: '#a8a0b8',
+      buttonBorder: '#443d50',
       
-      inputBg: '#44475a',
-      inputBorder: '#6272a4',
-      inputText: '#f8f8f2',
-      inputPlaceholder: '#6272a4',
+      inputBg: '#26222d',
+      inputBorder: '#443d50',
+      inputText: '#ede8f5',
+      inputPlaceholder: '#706882',
     },
   },
 
-  // Monokai theme
-  monokai: {
-    id: 'monokai',
-    name: '🎨 Monokai',
+  // Coffee - Warm sepia tones, comfortable for long sessions
+  coffee: {
+    id: 'coffee',
+    name: 'Coffee',
     colors: {
-      bgPrimary: '#272822',
-      bgSecondary: '#1e1f1a',
-      bgTertiary: '#2d2e27',
-      bgHover: '#3e3d32',
-      bgSelected: '#49483e',
+      bgPrimary: '#1c1917',
+      bgSecondary: '#171412',
+      bgTertiary: '#231f1c',
+      bgHover: '#2d2825',
+      bgSelected: '#38322e',
       
-      textPrimary: '#f8f8f2',
-      textSecondary: '#cfcfc2',
-      textMuted: '#75715e',
-      textAccent: '#fff',
+      textPrimary: '#f5f0eb',
+      textSecondary: '#b5a99d',
+      textMuted: '#786b60',
+      textAccent: '#ffffff',
       
-      borderPrimary: '#3e3d32',
-      borderSecondary: '#49483e',
+      borderPrimary: '#2d2825',
+      borderSecondary: '#45403a',
       
-      accentPrimary: '#a6e22e',
-      accentSecondary: '#66d9ef',
+      accentPrimary: '#d4a574',
+      accentSecondary: '#e6c9a8',
       
-      error: '#f92672',
-      errorBg: '#3d272d',
-      warning: '#e6db74',
-      warningBg: '#3d3a27',
-      success: '#a6e22e',
-      successBg: '#2d3d27',
-      exception: '#fd971f',
-      exceptionBg: '#3d3027',
+      error: '#f87171',
+      errorBg: '#2a1f1f',
+      warning: '#fbbf24',
+      warningBg: '#2a2618',
+      success: '#4ade80',
+      successBg: '#1c2a1f',
+      exception: '#fb7185',
+      exceptionBg: '#2a1f22',
       
-      timestamp: '#66d9ef',
-      podName: '#f8f8f2',
-      containerName: '#75715e',
-      searchHighlight: '#e6db74',
-      searchHighlightText: '#272822',
+      timestamp: '#d4a574',
+      podName: '#f5f0eb',
+      containerName: '#786b60',
+      searchHighlight: '#fbbf24',
+      searchHighlightText: '#1c1917',
       
-      buttonBg: '#3e3d32',
-      buttonBgHover: '#49483e',
-      buttonText: '#f8f8f2',
-      buttonBorder: '#49483e',
+      buttonBg: '#2d2825',
+      buttonBgHover: '#45403a',
+      buttonText: '#b5a99d',
+      buttonBorder: '#45403a',
       
-      inputBg: '#3e3d32',
-      inputBorder: '#49483e',
-      inputText: '#f8f8f2',
-      inputPlaceholder: '#75715e',
+      inputBg: '#231f1c',
+      inputBorder: '#45403a',
+      inputText: '#f5f0eb',
+      inputPlaceholder: '#786b60',
     },
   },
 
-  // Nord theme
-  nord: {
-    id: 'nord',
-    name: '❄️ Nord',
+  // Arctic - Cool light gray theme
+  arctic: {
+    id: 'arctic',
+    name: 'Arctic',
     colors: {
-      bgPrimary: '#2e3440',
-      bgSecondary: '#292e39',
-      bgTertiary: '#3b4252',
-      bgHover: '#434c5e',
-      bgSelected: '#4c566a',
+      bgPrimary: '#f8fafc',
+      bgSecondary: '#f1f5f9',
+      bgTertiary: '#ffffff',
+      bgHover: '#e2e8f0',
+      bgSelected: '#cbd5e1',
       
-      textPrimary: '#eceff4',
-      textSecondary: '#d8dee9',
-      textMuted: '#a0a8b7',
-      textAccent: '#fff',
+      textPrimary: '#1e293b',
+      textSecondary: '#475569',
+      textMuted: '#64748b',
+      textAccent: '#0f172a',
       
-      borderPrimary: '#3b4252',
-      borderSecondary: '#4c566a',
+      borderPrimary: '#e2e8f0',
+      borderSecondary: '#cbd5e1',
       
-      accentPrimary: '#88c0d0',
-      accentSecondary: '#81a1c1',
+      accentPrimary: '#0ea5e9',
+      accentSecondary: '#38bdf8',
       
-      error: '#bf616a',
-      errorBg: '#3d2e31',
-      warning: '#ebcb8b',
-      warningBg: '#3d3a30',
-      success: '#a3be8c',
-      successBg: '#2e3d30',
-      exception: '#b48ead',
-      exceptionBg: '#362e3d',
+      error: '#dc2626',
+      errorBg: '#fef2f2',
+      warning: '#ca8a04',
+      warningBg: '#fefce8',
+      success: '#16a34a',
+      successBg: '#f0fdf4',
+      exception: '#db2777',
+      exceptionBg: '#fdf2f8',
       
-      timestamp: '#88c0d0',
-      podName: '#eceff4',
-      containerName: '#a0a8b7',
-      searchHighlight: '#ebcb8b',
-      searchHighlightText: '#2e3440',
+      timestamp: '#0ea5e9',
+      podName: '#1e293b',
+      containerName: '#64748b',
+      searchHighlight: '#fde047',
+      searchHighlightText: '#1e293b',
       
-      buttonBg: '#3b4252',
-      buttonBgHover: '#4c566a',
-      buttonText: '#eceff4',
-      buttonBorder: '#4c566a',
+      buttonBg: '#f1f5f9',
+      buttonBgHover: '#e2e8f0',
+      buttonText: '#475569',
+      buttonBorder: '#cbd5e1',
       
-      inputBg: '#3b4252',
-      inputBorder: '#4c566a',
-      inputText: '#eceff4',
-      inputPlaceholder: '#a0a8b7',
-    },
-  },
-
-  // Solarized Dark theme
-  solarizedDark: {
-    id: 'solarizedDark',
-    name: '🌅 Solarized Dark',
-    colors: {
-      bgPrimary: '#002b36',
-      bgSecondary: '#001f27',
-      bgTertiary: '#073642',
-      bgHover: '#094452',
-      bgSelected: '#0a5464',
-      
-      textPrimary: '#839496',
-      textSecondary: '#93a1a1',
-      textMuted: '#657b83',
-      textAccent: '#fdf6e3',
-      
-      borderPrimary: '#073642',
-      borderSecondary: '#094452',
-      
-      accentPrimary: '#268bd2',
-      accentSecondary: '#2aa198',
-      
-      error: '#dc322f',
-      errorBg: '#2b1f1f',
-      warning: '#b58900',
-      warningBg: '#2b2a1f',
-      success: '#859900',
-      successBg: '#1f2b1f',
-      exception: '#d33682',
-      exceptionBg: '#2b1f27',
-      
-      timestamp: '#2aa198',
-      podName: '#839496',
-      containerName: '#657b83',
-      searchHighlight: '#b58900',
-      searchHighlightText: '#002b36',
-      
-      buttonBg: '#073642',
-      buttonBgHover: '#094452',
-      buttonText: '#93a1a1',
-      buttonBorder: '#094452',
-      
-      inputBg: '#073642',
-      inputBorder: '#094452',
-      inputText: '#839496',
-      inputPlaceholder: '#657b83',
-    },
-  },
-
-  // GitHub Dark theme
-  githubDark: {
-    id: 'githubDark',
-    name: '🐙 GitHub Dark',
-    colors: {
-      bgPrimary: '#0d1117',
-      bgSecondary: '#010409',
-      bgTertiary: '#161b22',
-      bgHover: '#21262d',
-      bgSelected: '#30363d',
-      
-      textPrimary: '#c9d1d9',
-      textSecondary: '#8b949e',
-      textMuted: '#6e7681',
-      textAccent: '#f0f6fc',
-      
-      borderPrimary: '#21262d',
-      borderSecondary: '#30363d',
-      
-      accentPrimary: '#58a6ff',
-      accentSecondary: '#79c0ff',
-      
-      error: '#f85149',
-      errorBg: '#21161b',
-      warning: '#d29922',
-      warningBg: '#211f17',
-      success: '#3fb950',
-      successBg: '#16211b',
-      exception: '#f778ba',
-      exceptionBg: '#21161f',
-      
-      timestamp: '#79c0ff',
-      podName: '#c9d1d9',
-      containerName: '#6e7681',
-      searchHighlight: '#d29922',
-      searchHighlightText: '#0d1117',
-      
-      buttonBg: '#21262d',
-      buttonBgHover: '#30363d',
-      buttonText: '#c9d1d9',
-      buttonBorder: '#30363d',
-      
-      inputBg: '#0d1117',
-      inputBorder: '#30363d',
-      inputText: '#c9d1d9',
-      inputPlaceholder: '#6e7681',
-    },
-  },
-
-  // Cyberpunk theme
-  cyberpunk: {
-    id: 'cyberpunk',
-    name: '🌆 Cyberpunk',
-    colors: {
-      bgPrimary: '#0a0a0f',
-      bgSecondary: '#05050a',
-      bgTertiary: '#12121a',
-      bgHover: '#1a1a25',
-      bgSelected: '#252535',
-      
-      textPrimary: '#00ffff',
-      textSecondary: '#00cccc',
-      textMuted: '#008888',
-      textAccent: '#ff00ff',
-      
-      borderPrimary: '#1a1a2a',
-      borderSecondary: '#ff00ff40',
-      
-      accentPrimary: '#ff00ff',
-      accentSecondary: '#00ffff',
-      
-      error: '#ff0055',
-      errorBg: '#1a0011',
-      warning: '#ffff00',
-      warningBg: '#1a1a00',
-      success: '#00ff66',
-      successBg: '#001a0d',
-      exception: '#ff6600',
-      exceptionBg: '#1a0d00',
-      
-      timestamp: '#00ffff',
-      podName: '#ff00ff',
-      containerName: '#008888',
-      searchHighlight: '#ffff00',
-      searchHighlightText: '#0a0a0f',
-      
-      buttonBg: '#1a1a25',
-      buttonBgHover: '#ff00ff30',
-      buttonText: '#00ffff',
-      buttonBorder: '#ff00ff',
-      
-      inputBg: '#12121a',
-      inputBorder: '#ff00ff60',
-      inputText: '#00ffff',
-      inputPlaceholder: '#008888',
-    },
-  },
-
-  // High Contrast theme
-  highContrast: {
-    id: 'highContrast',
-    name: '👁️ High Contrast',
-    colors: {
-      bgPrimary: '#000000',
-      bgSecondary: '#000000',
-      bgTertiary: '#0a0a0a',
-      bgHover: '#1a1a1a',
-      bgSelected: '#2a2a2a',
-      
-      textPrimary: '#ffffff',
-      textSecondary: '#ffffff',
-      textMuted: '#cccccc',
-      textAccent: '#ffff00',
-      
-      borderPrimary: '#ffffff',
-      borderSecondary: '#ffff00',
-      
-      accentPrimary: '#00ffff',
-      accentSecondary: '#ffff00',
-      
-      error: '#ff0000',
-      errorBg: '#330000',
-      warning: '#ffff00',
-      warningBg: '#333300',
-      success: '#00ff00',
-      successBg: '#003300',
-      exception: '#ff00ff',
-      exceptionBg: '#330033',
-      
-      timestamp: '#00ffff',
-      podName: '#ffffff',
-      containerName: '#cccccc',
-      searchHighlight: '#ffff00',
-      searchHighlightText: '#000000',
-      
-      buttonBg: '#000000',
-      buttonBgHover: '#333333',
-      buttonText: '#ffffff',
-      buttonBorder: '#ffffff',
-      
-      inputBg: '#000000',
-      inputBorder: '#ffffff',
-      inputText: '#ffffff',
-      inputPlaceholder: '#888888',
+      inputBg: '#ffffff',
+      inputBorder: '#cbd5e1',
+      inputText: '#1e293b',
+      inputPlaceholder: '#94a3b8',
     },
   },
 };
 
 // Default theme
-export const defaultTheme = themes.dark;
+export const defaultTheme = themes.midnight;
 
 // Get theme by ID or return default
 export function getTheme(id: string): Theme {
