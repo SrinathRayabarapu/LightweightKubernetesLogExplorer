@@ -26,6 +26,8 @@ export function RefreshIndicator({
   const [showSettings, setShowSettings] = useState(false);
 
   const intervalOptions = [
+    { value: 10, label: '10s' },
+    { value: 30, label: '30s' },
     { value: 60, label: '1m' },
     { value: 120, label: '2m' },
     { value: 300, label: '5m' },
@@ -185,7 +187,7 @@ export function RefreshIndicator({
 
       {autoRefreshEnabled && (
         <span style={styles.intervalLabel}>
-          every {Math.floor(refreshInterval / 60)}m
+          every {refreshInterval < 60 ? `${refreshInterval}s` : `${Math.floor(refreshInterval / 60)}m`}
         </span>
       )}
     </div>

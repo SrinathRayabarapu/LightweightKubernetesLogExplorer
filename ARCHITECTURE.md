@@ -341,7 +341,7 @@ frontend/src/
 │   ├── EnvSelector.tsx     # Environment dropdown
 │   ├── PodSelector.tsx     # Pod dropdown with status
 │   ├── SearchableSelect.tsx # Autocomplete dropdown
-│   ├── RefreshIndicator.tsx # Refresh button & auto-refresh
+│   ├── RefreshIndicator.tsx # Refresh button & auto-refresh (10s/30s/1m/2m/5m/10m)
 │   └── ThemeSelector.tsx   # Theme dropdown
 │
 ├── config/

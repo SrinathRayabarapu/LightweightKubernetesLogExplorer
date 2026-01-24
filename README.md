@@ -63,7 +63,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | **Automatic Log Fetching** | ALL logs fetched automatically on pod selection - no manual "fetch all" needed |
 | **Full-Text Search** | SQLite FTS5-powered search with instant results and highlighted matches |
 | **Time-Based Navigation** | Splunk-style exploration with ±5min/±10min time windows |
-| **Auto-Refresh** | Configurable automatic log fetching (1m, 2m, 5m, 10m intervals) |
+| **Auto-Refresh** | Configurable automatic log fetching (10s, 30s, 1m, 2m, 5m, 10m intervals) |
 | **Storage Management** | 100 MB cap with automatic cleanup of oldest logs |
 | **Production Warning** | Confirmation dialog when accessing production environments |
 
@@ -393,7 +393,10 @@ npm run preview
 ### Auto-Refresh
 
 1. Check the **Auto** checkbox
-2. Click ⚙ to adjust the refresh interval (1m, 2m, 5m, 10m)
+2. Click ⚙ to adjust the refresh interval:
+   - **10s, 30s** - For real-time monitoring
+   - **1m, 2m** - For active debugging
+   - **5m, 10m** - For passive monitoring
 3. ALL logs will be fetched on each refresh cycle
 
 ### Themes & UI Customization
