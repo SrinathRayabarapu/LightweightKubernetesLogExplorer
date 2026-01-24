@@ -236,7 +236,7 @@ export default function App() {
         backgroundColor: theme.colors.bgSecondary,
         borderBottomColor: theme.colors.borderPrimary,
       }}>
-        <h1 style={{ ...styles.title, color: theme.colors.textAccent }}>K8s Log Explorer</h1>
+        <h1 style={{ ...styles.title, color: theme.colors.textAccent }}>K8S Log Explorer</h1>
         <div style={styles.headerRight}>
           <ThemeSelector />
           {storageStats.data && (
