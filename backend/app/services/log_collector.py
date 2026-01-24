@@ -250,6 +250,8 @@ async def store_logs(entries: list[dict]) -> int:
     """
     Store log entries in the database, skipping duplicates.
     
+    Processes entries in batches to avoid blocking on large datasets.
+    
     Returns:
         Number of new logs stored
     """
@@ -257,40 +259,47 @@ async def store_logs(entries: list[dict]) -> int:
         return 0
     
     stored_count = 0
+    batch_size = 100  # Process 100 entries at a time
     
-    for entry in entries:
-        # Check if hash already exists
-        existing = await fetch_one(
-            "SELECT 1 FROM log_hashes WHERE hash = ?",
-            (entry["hash"],)
-        )
+    # Process in batches to avoid blocking
+    for i in range(0, len(entries), batch_size):
+        batch = entries[i:i + batch_size]
         
-        if existing:
-            continue
+        for entry in batch:
+            # Check if hash already exists
+            existing = await fetch_one(
+                "SELECT 1 FROM log_hashes WHERE hash = ?",
+                (entry["hash"],)
+            )
+            
+            if existing:
+                continue
+            
+            # Insert log entry
+            cursor = await execute("""
+                INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                entry["timestamp"],
+                entry["env"],
+                entry["namespace"],
+                entry["service"],
+                entry["pod"],
+                entry["container"],
+                entry["message"],
+            ))
+            
+            # Store hash for deduplication
+            await execute(
+                "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
+                (entry["hash"], cursor.lastrowid)
+            )
+            
+            stored_count += 1
         
-        # Insert log entry
-        cursor = await execute("""
-            INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            entry["timestamp"],
-            entry["env"],
-            entry["namespace"],
-            entry["service"],
-            entry["pod"],
-            entry["container"],
-            entry["message"],
-        ))
-        
-        # Store hash for deduplication
-        await execute(
-            "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
-            (entry["hash"], cursor.lastrowid)
-        )
-        
-        stored_count += 1
+        # Commit after each batch to avoid long transactions
+        await commit()
     
-    await commit()
     return stored_count
 
 
