@@ -2,7 +2,7 @@
  * Log table component displaying log entries.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
 
@@ -12,14 +12,20 @@ interface LogTableProps {
   hasMore: boolean;
   isLoading: boolean;
   filteredCount?: number; // Number of logs excluded by filters
+  filterPatterns?: string[]; // Patterns used for filtering
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], onLoadMore, onTimeNavigate }: LogTableProps) {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
+  const [showFilterTooltip, setShowFilterTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const filterContainerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);
@@ -278,27 +284,73 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, o
       case 'error':
         return {
           ...baseStyle,
-          fontSize: '14px', // +2 from base 12px for better visibility
+          fontSize: '15px', // +2 from base 13px for better visibility
           color: '#ff6b6b',
           fontWeight: 500,
         };
       case 'exception':
         return {
           ...baseStyle,
-          fontSize: '14px', // +2 from base 12px for better visibility
+          fontSize: '15px', // +2 from base 13px for better visibility
           color: '#ff6b9d',
           fontWeight: 500,
         };
       case 'warning':
         return {
           ...baseStyle,
-          fontSize: '14px', // +2 from base 12px for better visibility
+          fontSize: '15px', // +2 from base 13px for better visibility
           color: '#ffaa00',
           fontWeight: 500,
         };
       default:
         return baseStyle;
     }
+  };
+
+  /**
+   * Calculate tooltip position based on container element position.
+   */
+  useEffect(() => {
+    if (showFilterTooltip && filterContainerRef.current) {
+      const rect = filterContainerRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.top - 10, // Position above the element with gap
+        left: rect.left + rect.width / 2, // Center horizontally
+      });
+    } else {
+      setTooltipPosition(null);
+    }
+  }, [showFilterTooltip]);
+
+  /**
+   * Cleanup timeout on unmount.
+   */
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * Handle showing tooltip with delay prevention.
+   */
+  const handleShowTooltip = () => {
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    setShowFilterTooltip(true);
+  };
+
+  /**
+   * Handle hiding tooltip with small delay to allow mouse movement.
+   */
+  const handleHideTooltip = () => {
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowFilterTooltip(false);
+    }, 100); // Small delay to allow mouse movement to tooltip
   };
 
   /**
@@ -357,9 +409,41 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, o
           </span>
         )}
         {filteredCount > 0 && (
-          <span style={styles.filteredCount} title="Logs excluded by filter patterns (healthchecks, metrics, etc.)">
-            ({filteredCount} filtered)
-          </span>
+          <>
+            <div
+              ref={filterContainerRef}
+              style={styles.filteredCountContainer}
+              onMouseEnter={handleShowTooltip}
+              onMouseLeave={handleHideTooltip}
+            >
+              <span style={styles.filteredCount}>
+                ({filteredCount} filtered)
+              </span>
+            </div>
+            {showFilterTooltip && filterPatterns.length > 0 && tooltipPosition && (
+              <div
+                ref={tooltipRef}
+                data-filter-tooltip
+                style={{
+                  ...styles.filterTooltip,
+                  top: `${tooltipPosition.top}px`,
+                  left: `${tooltipPosition.left}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+                onMouseEnter={handleShowTooltip}
+                onMouseLeave={handleHideTooltip}
+              >
+                <div style={styles.filterTooltipTitle}>Filtered Patterns:</div>
+                <ul style={styles.filterTooltipList}>
+                  {filterPatterns.map((pattern, index) => (
+                    <li key={index} style={styles.filterTooltipItem}>
+                      <code style={styles.filterTooltipCode}>{pattern}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
         )}
         {isLoading && logs.length > 0 && (
           <div style={styles.loadingIndicator}>
@@ -465,6 +549,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+    position: 'relative',
+    zIndex: 100,
+    overflow: 'visible',
   },
   countContainer: {
     display: 'flex',
@@ -484,11 +571,69 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: '#666',
   },
+  filteredCountContainer: {
+    position: 'relative',
+    display: 'inline-block',
+    zIndex: 10000,
+  },
   filteredCount: {
     fontSize: '12px',
     color: '#888',
     fontStyle: 'italic',
     cursor: 'help',
+  },
+  filterTooltip: {
+    position: 'fixed',
+    backgroundColor: '#1a1a2e',
+    border: '1px solid #444',
+    borderRadius: '6px',
+    padding: '10px',
+    minWidth: '220px',
+    maxWidth: '320px',
+    maxHeight: '220px',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+    zIndex: 10001,
+    pointerEvents: 'auto',
+    cursor: 'default',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  filterTooltipTitle: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#4a9eff',
+    marginBottom: '8px',
+    borderBottom: '1px solid #333',
+    paddingBottom: '6px',
+    flexShrink: 0,
+  },
+  filterTooltipList: {
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+    maxHeight: '170px',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    flex: 1,
+    paddingRight: '6px',
+    // Custom scrollbar styling for better visibility
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#444 #1a1a2e',
+  },
+  filterTooltipItem: {
+    fontSize: '12px',
+    color: '#ccc',
+    marginBottom: '6px',
+    paddingLeft: '8px',
+    lineHeight: '1.4',
+  },
+  filterTooltipCode: {
+    fontFamily: 'monospace',
+    backgroundColor: '#252540',
+    padding: '4px 6px',
+    borderRadius: '3px',
+    color: '#e0e0e0',
+    fontSize: '11px',
   },
   tableWrapper: {
     flex: 1,
@@ -523,7 +668,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   timestamp: {
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#6cb6ff',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
@@ -540,13 +685,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   podName: {
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#e0e0e0',
     wordBreak: 'break-all',
   },
   containerName: {
     fontFamily: 'monospace',
-    fontSize: '11px',
+    fontSize: '12px',
     color: '#888',
   },
   tdMessage: {
@@ -570,7 +715,7 @@ const styles: Record<string, React.CSSProperties> = {
   message: {
     margin: 0,
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#e0e0e0',
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
