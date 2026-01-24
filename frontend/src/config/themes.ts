@@ -60,6 +60,57 @@ export interface Theme {
 }
 
 export const themes: Record<string, Theme> = {
+  // ==================== DARK THEMES ====================
+
+  // Classic Dark - Original dark blue theme
+  classicDark: {
+    id: 'classicDark',
+    name: 'Classic Dark',
+    colors: {
+      bgPrimary: '#1a1a2e',
+      bgSecondary: '#16162a',
+      bgTertiary: '#1f1f35',
+      bgHover: '#252540',
+      bgSelected: '#3a3a5a',
+      
+      textPrimary: '#eee',
+      textSecondary: '#aaa',
+      textMuted: '#888',
+      textAccent: '#fff',
+      
+      borderPrimary: '#333',
+      borderSecondary: '#444',
+      
+      accentPrimary: '#4a9eff',
+      accentSecondary: '#6cb6ff',
+      
+      error: '#ff6b6b',
+      errorBg: '#2a1f1f',
+      warning: '#ffaa00',
+      warningBg: '#2a241f',
+      success: '#51cf66',
+      successBg: '#1f2a1f',
+      exception: '#ff6b9d',
+      exceptionBg: '#2a1f22',
+      
+      timestamp: '#6cb6ff',
+      podName: '#e0e0e0',
+      containerName: '#888',
+      searchHighlight: '#ffeb3b',
+      searchHighlightText: '#000',
+      
+      buttonBg: '#2a2a40',
+      buttonBgHover: '#3a3a5a',
+      buttonText: '#ccc',
+      buttonBorder: '#444',
+      
+      inputBg: '#2a2a40',
+      inputBorder: '#333',
+      inputText: '#eee',
+      inputPlaceholder: '#666',
+    },
+  },
+
   // Midnight - Refined dark theme with soft blue undertones
   midnight: {
     id: 'midnight',
@@ -106,55 +157,6 @@ export const themes: Record<string, Theme> = {
       inputBorder: '#3d4450',
       inputText: '#e6e8eb',
       inputPlaceholder: '#6b7280',
-    },
-  },
-
-  // Daylight - Clean, warm light theme easy on the eyes
-  daylight: {
-    id: 'daylight',
-    name: 'Daylight',
-    colors: {
-      bgPrimary: '#fafafa',
-      bgSecondary: '#f0f0f0',
-      bgTertiary: '#ffffff',
-      bgHover: '#e8e8e8',
-      bgSelected: '#e0e0e0',
-      
-      textPrimary: '#2d3748',
-      textSecondary: '#4a5568',
-      textMuted: '#718096',
-      textAccent: '#1a202c',
-      
-      borderPrimary: '#e2e8f0',
-      borderSecondary: '#cbd5e0',
-      
-      accentPrimary: '#3182ce',
-      accentSecondary: '#4299e1',
-      
-      error: '#e53e3e',
-      errorBg: '#fff5f5',
-      warning: '#d69e2e',
-      warningBg: '#fffff0',
-      success: '#38a169',
-      successBg: '#f0fff4',
-      exception: '#d53f8c',
-      exceptionBg: '#fff5f7',
-      
-      timestamp: '#3182ce',
-      podName: '#2d3748',
-      containerName: '#718096',
-      searchHighlight: '#faf089',
-      searchHighlightText: '#1a202c',
-      
-      buttonBg: '#edf2f7',
-      buttonBgHover: '#e2e8f0',
-      buttonText: '#4a5568',
-      buttonBorder: '#cbd5e0',
-      
-      inputBg: '#ffffff',
-      inputBorder: '#cbd5e0',
-      inputText: '#2d3748',
-      inputPlaceholder: '#a0aec0',
     },
   },
 
@@ -354,7 +356,7 @@ export const themes: Record<string, Theme> = {
     },
   },
 
-  // Lavender - Soft purple tones, gentle on eyes
+  // Lavender - Soft purple tones
   lavender: {
     id: 'lavender',
     name: 'Lavender',
@@ -403,7 +405,7 @@ export const themes: Record<string, Theme> = {
     },
   },
 
-  // Coffee - Warm sepia tones, comfortable for long sessions
+  // Coffee - Warm sepia tones
   coffee: {
     id: 'coffee',
     name: 'Coffee',
@@ -449,6 +451,57 @@ export const themes: Record<string, Theme> = {
       inputBorder: '#45403a',
       inputText: '#f5f0eb',
       inputPlaceholder: '#786b60',
+    },
+  },
+
+  // ==================== LIGHT THEMES ====================
+
+  // Daylight - Clean, warm light theme
+  daylight: {
+    id: 'daylight',
+    name: 'Daylight',
+    colors: {
+      bgPrimary: '#fafafa',
+      bgSecondary: '#f0f0f0',
+      bgTertiary: '#ffffff',
+      bgHover: '#e8e8e8',
+      bgSelected: '#e0e0e0',
+      
+      textPrimary: '#2d3748',
+      textSecondary: '#4a5568',
+      textMuted: '#718096',
+      textAccent: '#1a202c',
+      
+      borderPrimary: '#e2e8f0',
+      borderSecondary: '#cbd5e0',
+      
+      accentPrimary: '#3182ce',
+      accentSecondary: '#4299e1',
+      
+      error: '#e53e3e',
+      errorBg: '#fff5f5',
+      warning: '#d69e2e',
+      warningBg: '#fffff0',
+      success: '#38a169',
+      successBg: '#f0fff4',
+      exception: '#d53f8c',
+      exceptionBg: '#fff5f7',
+      
+      timestamp: '#3182ce',
+      podName: '#2d3748',
+      containerName: '#718096',
+      searchHighlight: '#faf089',
+      searchHighlightText: '#1a202c',
+      
+      buttonBg: '#edf2f7',
+      buttonBgHover: '#e2e8f0',
+      buttonText: '#4a5568',
+      buttonBorder: '#cbd5e0',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#cbd5e0',
+      inputText: '#2d3748',
+      inputPlaceholder: '#a0aec0',
     },
   },
 
@@ -500,20 +553,319 @@ export const themes: Record<string, Theme> = {
       inputPlaceholder: '#94a3b8',
     },
   },
+
+  // Paper - Warm off-white theme
+  paper: {
+    id: 'paper',
+    name: 'Paper',
+    colors: {
+      bgPrimary: '#fdfbf7',
+      bgSecondary: '#f5f1ea',
+      bgTertiary: '#ffffff',
+      bgHover: '#ebe5db',
+      bgSelected: '#ddd5c8',
+      
+      textPrimary: '#3d3929',
+      textSecondary: '#5c5647',
+      textMuted: '#8a8377',
+      textAccent: '#2a2618',
+      
+      borderPrimary: '#e5dfd4',
+      borderSecondary: '#d4cbbf',
+      
+      accentPrimary: '#b8860b',
+      accentSecondary: '#d4a017',
+      
+      error: '#c53030',
+      errorBg: '#fef5f5',
+      warning: '#b7791f',
+      warningBg: '#fefcf0',
+      success: '#2f855a',
+      successBg: '#f0fdf4',
+      exception: '#b83280',
+      exceptionBg: '#fef5f8',
+      
+      timestamp: '#b8860b',
+      podName: '#3d3929',
+      containerName: '#8a8377',
+      searchHighlight: '#fde68a',
+      searchHighlightText: '#3d3929',
+      
+      buttonBg: '#f5f1ea',
+      buttonBgHover: '#ebe5db',
+      buttonText: '#5c5647',
+      buttonBorder: '#d4cbbf',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#d4cbbf',
+      inputText: '#3d3929',
+      inputPlaceholder: '#a09889',
+    },
+  },
+
+  // Mint - Fresh green-tinted light theme
+  mint: {
+    id: 'mint',
+    name: 'Mint',
+    colors: {
+      bgPrimary: '#f5faf8',
+      bgSecondary: '#ebf5f0',
+      bgTertiary: '#ffffff',
+      bgHover: '#dceee5',
+      bgSelected: '#c6e2d4',
+      
+      textPrimary: '#1f3d32',
+      textSecondary: '#3d5c4e',
+      textMuted: '#5f8070',
+      textAccent: '#14332a',
+      
+      borderPrimary: '#d1e8dc',
+      borderSecondary: '#b5d9c6',
+      
+      accentPrimary: '#059669',
+      accentSecondary: '#10b981',
+      
+      error: '#dc2626',
+      errorBg: '#fef2f2',
+      warning: '#d97706',
+      warningBg: '#fffbeb',
+      success: '#059669',
+      successBg: '#ecfdf5',
+      exception: '#db2777',
+      exceptionBg: '#fdf2f8',
+      
+      timestamp: '#059669',
+      podName: '#1f3d32',
+      containerName: '#5f8070',
+      searchHighlight: '#fde047',
+      searchHighlightText: '#1f3d32',
+      
+      buttonBg: '#ebf5f0',
+      buttonBgHover: '#dceee5',
+      buttonText: '#3d5c4e',
+      buttonBorder: '#b5d9c6',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#b5d9c6',
+      inputText: '#1f3d32',
+      inputPlaceholder: '#7fa393',
+    },
+  },
+
+  // Rose - Soft pink-tinted light theme
+  rose: {
+    id: 'rose',
+    name: 'Rose',
+    colors: {
+      bgPrimary: '#fdf8f9',
+      bgSecondary: '#f9eff1',
+      bgTertiary: '#ffffff',
+      bgHover: '#f3e4e7',
+      bgSelected: '#e8d3d8',
+      
+      textPrimary: '#4a2c34',
+      textSecondary: '#6b4550',
+      textMuted: '#957a82',
+      textAccent: '#3d2229',
+      
+      borderPrimary: '#f0dce0',
+      borderSecondary: '#e0c5cb',
+      
+      accentPrimary: '#be185d',
+      accentSecondary: '#db2777',
+      
+      error: '#dc2626',
+      errorBg: '#fef2f2',
+      warning: '#d97706',
+      warningBg: '#fffbeb',
+      success: '#059669',
+      successBg: '#ecfdf5',
+      exception: '#be185d',
+      exceptionBg: '#fdf2f8',
+      
+      timestamp: '#be185d',
+      podName: '#4a2c34',
+      containerName: '#957a82',
+      searchHighlight: '#fde047',
+      searchHighlightText: '#4a2c34',
+      
+      buttonBg: '#f9eff1',
+      buttonBgHover: '#f3e4e7',
+      buttonText: '#6b4550',
+      buttonBorder: '#e0c5cb',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#e0c5cb',
+      inputText: '#4a2c34',
+      inputPlaceholder: '#b0949a',
+    },
+  },
+
+  // Sky - Blue-tinted light theme
+  sky: {
+    id: 'sky',
+    name: 'Sky',
+    colors: {
+      bgPrimary: '#f5f9fd',
+      bgSecondary: '#eaf2fa',
+      bgTertiary: '#ffffff',
+      bgHover: '#dce8f5',
+      bgSelected: '#c5d9ed',
+      
+      textPrimary: '#1e3a5f',
+      textSecondary: '#3d5a80',
+      textMuted: '#6b8ab0',
+      textAccent: '#0f2644',
+      
+      borderPrimary: '#d1e3f3',
+      borderSecondary: '#b4d0e8',
+      
+      accentPrimary: '#0369a1',
+      accentSecondary: '#0284c7',
+      
+      error: '#dc2626',
+      errorBg: '#fef2f2',
+      warning: '#d97706',
+      warningBg: '#fffbeb',
+      success: '#059669',
+      successBg: '#ecfdf5',
+      exception: '#db2777',
+      exceptionBg: '#fdf2f8',
+      
+      timestamp: '#0369a1',
+      podName: '#1e3a5f',
+      containerName: '#6b8ab0',
+      searchHighlight: '#fde047',
+      searchHighlightText: '#1e3a5f',
+      
+      buttonBg: '#eaf2fa',
+      buttonBgHover: '#dce8f5',
+      buttonText: '#3d5a80',
+      buttonBorder: '#b4d0e8',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#b4d0e8',
+      inputText: '#1e3a5f',
+      inputPlaceholder: '#8aa5c4',
+    },
+  },
+
+  // Sand - Warm beige light theme
+  sand: {
+    id: 'sand',
+    name: 'Sand',
+    colors: {
+      bgPrimary: '#fdfcf9',
+      bgSecondary: '#f7f4ed',
+      bgTertiary: '#ffffff',
+      bgHover: '#efe9dd',
+      bgSelected: '#e3dacb',
+      
+      textPrimary: '#44403c',
+      textSecondary: '#5c5650',
+      textMuted: '#857d73',
+      textAccent: '#292524',
+      
+      borderPrimary: '#e7e0d5',
+      borderSecondary: '#d6cdc0',
+      
+      accentPrimary: '#b45309',
+      accentSecondary: '#d97706',
+      
+      error: '#dc2626',
+      errorBg: '#fef2f2',
+      warning: '#b45309',
+      warningBg: '#fffbeb',
+      success: '#059669',
+      successBg: '#ecfdf5',
+      exception: '#db2777',
+      exceptionBg: '#fdf2f8',
+      
+      timestamp: '#b45309',
+      podName: '#44403c',
+      containerName: '#857d73',
+      searchHighlight: '#fde68a',
+      searchHighlightText: '#44403c',
+      
+      buttonBg: '#f7f4ed',
+      buttonBgHover: '#efe9dd',
+      buttonText: '#5c5650',
+      buttonBorder: '#d6cdc0',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#d6cdc0',
+      inputText: '#44403c',
+      inputPlaceholder: '#a8a093',
+    },
+  },
+
+  // Lavender Light - Soft purple light theme
+  lavenderLight: {
+    id: 'lavenderLight',
+    name: 'Lavender Light',
+    colors: {
+      bgPrimary: '#faf8fc',
+      bgSecondary: '#f3eef8',
+      bgTertiary: '#ffffff',
+      bgHover: '#e9e0f2',
+      bgSelected: '#ddd0ea',
+      
+      textPrimary: '#3b2d4d',
+      textSecondary: '#584766',
+      textMuted: '#7f6d90',
+      textAccent: '#2d2040',
+      
+      borderPrimary: '#e5dcef',
+      borderSecondary: '#d3c5e2',
+      
+      accentPrimary: '#7c3aed',
+      accentSecondary: '#8b5cf6',
+      
+      error: '#dc2626',
+      errorBg: '#fef2f2',
+      warning: '#d97706',
+      warningBg: '#fffbeb',
+      success: '#059669',
+      successBg: '#ecfdf5',
+      exception: '#be185d',
+      exceptionBg: '#fdf2f8',
+      
+      timestamp: '#7c3aed',
+      podName: '#3b2d4d',
+      containerName: '#7f6d90',
+      searchHighlight: '#fde047',
+      searchHighlightText: '#3b2d4d',
+      
+      buttonBg: '#f3eef8',
+      buttonBgHover: '#e9e0f2',
+      buttonText: '#584766',
+      buttonBorder: '#d3c5e2',
+      
+      inputBg: '#ffffff',
+      inputBorder: '#d3c5e2',
+      inputText: '#3b2d4d',
+      inputPlaceholder: '#a090b3',
+    },
+  },
 };
 
 // Default theme
-export const defaultTheme = themes.midnight;
+export const defaultTheme = themes.classicDark;
 
 // Get theme by ID or return default
 export function getTheme(id: string): Theme {
   return themes[id] || defaultTheme;
 }
 
-// Get all theme options for dropdown
+// Get all theme options for dropdown - organized by category
 export function getThemeOptions(): { id: string; name: string }[] {
-  return Object.values(themes).map(theme => ({
-    id: theme.id,
-    name: theme.name,
-  }));
+  const darkThemes = ['classicDark', 'midnight', 'ocean', 'forest', 'slate', 'sunset', 'lavender', 'coffee'];
+  const lightThemes = ['daylight', 'arctic', 'paper', 'mint', 'rose', 'sky', 'sand', 'lavenderLight'];
+  
+  return [
+    // Dark themes first
+    ...darkThemes.map(id => ({ id, name: `🌙 ${themes[id].name}` })),
+    // Then light themes
+    ...lightThemes.map(id => ({ id, name: `☀️ ${themes[id].name}` })),
+  ];
 }
