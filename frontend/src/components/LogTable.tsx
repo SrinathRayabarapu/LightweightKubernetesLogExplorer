@@ -507,7 +507,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
 
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
-          <thead>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr>
               <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
               <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
@@ -711,6 +711,8 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       borderBottom: `1px solid ${colors.borderPrimary}`,
       position: 'sticky' as const,
       top: 0,
+      zIndex: 10,
+      boxShadow: `0 2px 2px -1px ${colors.borderPrimary}`,
     },
     tr: {
       borderBottom: `1px solid ${colors.borderPrimary}`,
