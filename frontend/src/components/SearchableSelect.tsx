@@ -3,6 +3,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 interface SearchableSelectProps {
   options: string[];
@@ -21,6 +22,7 @@ export function SearchableSelect({
   disabled = false,
   label,
 }: SearchableSelectProps) {
+  const { theme } = useTheme();
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -126,6 +128,96 @@ export function SearchableSelect({
     inputRef.current?.focus();
   }, [onChange]);
 
+  // Dynamic styles based on theme
+  const styles = {
+    container: {
+      position: 'relative' as const,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
+      minHeight: '54px',
+    },
+    label: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+    },
+    inputWrapper: {
+      position: 'relative' as const,
+      display: 'flex',
+      alignItems: 'center',
+    },
+    input: {
+      width: '100%',
+      padding: '10px 40px 10px 14px',
+      fontSize: '15px',
+      border: `1px solid ${theme.colors.inputBorder}`,
+      borderRadius: '6px',
+      backgroundColor: theme.colors.inputBg,
+      color: theme.colors.inputText,
+      minWidth: '220px',
+      outline: 'none',
+    },
+    inputDisabled: {
+      backgroundColor: theme.colors.bgPrimary,
+      color: theme.colors.textMuted,
+      cursor: 'not-allowed',
+    },
+    clearButton: {
+      position: 'absolute' as const,
+      right: '28px',
+      background: 'none',
+      border: 'none',
+      color: theme.colors.textMuted,
+      fontSize: '18px',
+      cursor: 'pointer',
+      padding: '0 6px',
+    },
+    arrow: {
+      position: 'absolute' as const,
+      right: '10px',
+      color: theme.colors.textMuted,
+      fontSize: '12px',
+      pointerEvents: 'none' as const,
+    },
+    dropdown: {
+      position: 'absolute' as const,
+      top: '100%',
+      left: 0,
+      right: 0,
+      marginTop: '6px',
+      maxHeight: '240px',
+      overflowY: 'auto' as const,
+      backgroundColor: theme.colors.bgTertiary,
+      border: `1px solid ${theme.colors.borderSecondary}`,
+      borderRadius: '6px',
+      zIndex: 1000,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+    },
+    option: {
+      padding: '10px 14px',
+      fontSize: '15px',
+      color: theme.colors.textPrimary,
+      cursor: 'pointer',
+      borderBottom: `1px solid ${theme.colors.borderPrimary}`,
+    },
+    optionHighlighted: {
+      backgroundColor: theme.colors.bgHover,
+    },
+    optionSelected: {
+      backgroundColor: `${theme.colors.accentPrimary}22`,
+      color: theme.colors.accentPrimary,
+    },
+    noResults: {
+      padding: '14px',
+      fontSize: '14px',
+      color: theme.colors.textMuted,
+      textAlign: 'center' as const,
+    },
+  };
+
   return (
     <div style={styles.container} ref={containerRef}>
       {label && <label style={styles.label}>{label}</label>}
@@ -183,92 +275,3 @@ export function SearchableSelect({
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    minHeight: '54px',
-  },
-  label: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  inputWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 40px 10px 14px',
-    fontSize: '15px',
-    border: '1px solid #333',
-    borderRadius: '6px',
-    backgroundColor: '#2a2a40',
-    color: '#eee',
-    minWidth: '220px',
-    outline: 'none',
-  },
-  inputDisabled: {
-    backgroundColor: '#1a1a2e',
-    color: '#666',
-    cursor: 'not-allowed',
-  },
-  clearButton: {
-    position: 'absolute',
-    right: '28px',
-    background: 'none',
-    border: 'none',
-    color: '#888',
-    fontSize: '18px',
-    cursor: 'pointer',
-    padding: '0 6px',
-  },
-  arrow: {
-    position: 'absolute',
-    right: '10px',
-    color: '#666',
-    fontSize: '12px',
-    pointerEvents: 'none',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    marginTop: '6px',
-    maxHeight: '240px',
-    overflowY: 'auto',
-    backgroundColor: '#2a2a40',
-    border: '1px solid #444',
-    borderRadius: '6px',
-    zIndex: 1000,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-  },
-  option: {
-    padding: '10px 14px',
-    fontSize: '15px',
-    color: '#eee',
-    cursor: 'pointer',
-    borderBottom: '1px solid #333',
-  },
-  optionHighlighted: {
-    backgroundColor: '#3a3a5a',
-  },
-  optionSelected: {
-    backgroundColor: '#4a9eff22',
-    color: '#4a9eff',
-  },
-  noResults: {
-    padding: '14px',
-    fontSize: '14px',
-    color: '#666',
-    textAlign: 'center',
-  },
-};
