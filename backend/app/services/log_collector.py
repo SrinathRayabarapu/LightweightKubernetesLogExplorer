@@ -322,7 +322,7 @@ async def store_logs(entries: list[dict]) -> int:
     return stored_count
 
 
-async def collect_logs(env: str, namespace: str, service: str, pod_filter: Optional[str] = None) -> dict:
+async def collect_logs(env: str, namespace: str, service: str, pod_filter: Optional[str] = None, fetch_all: bool = False) -> dict:
     """
     Collect logs for a service from its pods and containers.
     
@@ -402,25 +402,32 @@ async def collect_logs(env: str, namespace: str, service: str, pod_filter: Optio
         pods_processed = 0
         
         # Batch size configuration - limits log fetching to prevent hanging
+        # If batch_size is 0 or None, or fetch_all is True, fetch all available logs
         batch_size = settings.LOG_FETCH_BATCH_SIZE
         batch_timeout = settings.LOG_FETCH_TIMEOUT
+        
+        # Determine whether to use --tail limit
+        # - If fetch_all is True, don't use tail limit (get ALL logs)
+        # - If batch_size is 0, don't use tail limit
+        # - Otherwise, use tail limit for specific pod fetches
+        use_tail = (not fetch_all) and (batch_size > 0) if batch_size else False
         
         for pod in pods:
             # Fetch logs from all pods regardless of status
             # Some pods might have logs even if not in Running/Succeeded state
             for container in pod["containers"]:
                 try:
-                    # Use batch_size to limit log fetching and prevent hanging
-                    # When pod_filter is specified, use --tail with batch_size to limit recent logs
-                    # When doing incremental fetch, use --since-time with timeout protection
+                    # When pod_filter is specified and use_tail is True, use --tail to limit recent logs
+                    # When fetch_all is True or batch_size is 0, fetch ALL available logs (no limit)
+                    # When doing incremental fetch (since_time), don't use --tail
                     raw_logs = await get_pod_logs(
                         context=context,
                         namespace=namespace,
                         pod=pod["name"],
                         container=container,
                         since_time=last_timestamp,
-                        tail_lines=batch_size if pod_filter else None,  # Limit tail when fetching specific pod
-                        timeout=batch_timeout,
+                        tail_lines=batch_size if (pod_filter and use_tail) else None,
+                        timeout=batch_timeout if not fetch_all else 120,  # Longer timeout for fetch_all
                     )
                     
                     if not raw_logs.strip():

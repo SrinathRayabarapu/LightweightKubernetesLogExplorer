@@ -100,8 +100,8 @@ export function useFetchLogs() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ env, namespace, service, pod }: { env: string; namespace: string; service: string; pod?: string }) =>
-      api.fetchLogs(env, namespace, service, pod),
+    mutationFn: ({ env, namespace, service, pod, fetchAll }: { env: string; namespace: string; service: string; pod?: string; fetchAll?: boolean }) =>
+      api.fetchLogs(env, namespace, service, pod, fetchAll),
     onSuccess: () => {
       // Invalidate and refetch logs queries immediately to show new data
       queryClient.invalidateQueries({ queryKey: ['logs'] });

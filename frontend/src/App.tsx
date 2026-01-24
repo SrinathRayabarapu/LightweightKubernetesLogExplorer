@@ -174,6 +174,13 @@ export default function App() {
     }
   }, [selectedEnv, namespace, service, selectedPod, fetchLogsMutation]);
 
+  // Fetch ALL logs handler (no tail limit)
+  const handleFetchAllLogs = useCallback(() => {
+    if (selectedEnv && namespace && service && selectedPod) {
+      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
+    }
+  }, [selectedEnv, namespace, service, selectedPod, fetchLogsMutation]);
+
   // Load more handler
   const handleLoadMore = useCallback(() => {
     setOffset(prev => prev + limit);
@@ -320,6 +327,7 @@ export default function App() {
             autoRefreshEnabled={autoRefreshEnabled}
             refreshInterval={refreshInterval}
             onManualRefresh={handleManualRefresh}
+            onFetchAllLogs={handleFetchAllLogs}
             onToggleAutoRefresh={setAutoRefreshEnabled}
             onIntervalChange={setRefreshInterval}
           />

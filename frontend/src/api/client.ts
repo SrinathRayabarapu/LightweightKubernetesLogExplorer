@@ -109,10 +109,10 @@ export const api = {
     return fetchJson<LogsResponse>(`${API_BASE}/logs?${searchParams}`);
   },
 
-  fetchLogs: (env: string, namespace: string, service: string, pod?: string) =>
+  fetchLogs: (env: string, namespace: string, service: string, pod?: string, fetchAll?: boolean) =>
     fetchJson<FetchLogsResult>(`${API_BASE}/logs/fetch`, {
       method: 'POST',
-      body: JSON.stringify({ env, namespace, service, pod }),
+      body: JSON.stringify({ env, namespace, service, pod, fetchAll: fetchAll || false }),
     }),
 
   searchLogs: (params: {
