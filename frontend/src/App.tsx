@@ -10,6 +10,8 @@ import { LogTable } from './components/LogTable';
 import { RefreshIndicator } from './components/RefreshIndicator';
 import { SearchableSelect } from './components/SearchableSelect';
 import { PodSelector } from './components/PodSelector';
+import { ThemeSelector } from './components/ThemeSelector';
+import { useTheme } from './context/ThemeContext';
 import {
   useLogs,
   useSearchLogs,
@@ -28,6 +30,9 @@ type ViewMode = 'logs' | 'search' | 'time-window';
 const FIXED_NAMESPACE = 'jio-t2r-ms';
 
 export default function App() {
+  // Theme
+  const { theme } = useTheme();
+
   // Selection state
   const [selectedEnv, setSelectedEnv] = useState('');
   const namespace = FIXED_NAMESPACE; // Fixed namespace - not user-selectable
@@ -220,13 +225,22 @@ export default function App() {
   const hasMore = currentQuery.data?.hasMore || false;
 
   return (
-    <div style={styles.app}>
+    <div style={{
+      ...styles.app,
+      backgroundColor: theme.colors.bgPrimary,
+      color: theme.colors.textPrimary,
+    }}>
       {/* Header */}
-      <header style={styles.header}>
-        <h1 style={styles.title}>K8s Log Explorer</h1>
+      <header style={{
+        ...styles.header,
+        backgroundColor: theme.colors.bgSecondary,
+        borderBottomColor: theme.colors.borderPrimary,
+      }}>
+        <h1 style={{ ...styles.title, color: theme.colors.textAccent }}>K8s Log Explorer</h1>
         <div style={styles.headerRight}>
+          <ThemeSelector />
           {storageStats.data && (
-            <div style={styles.storage}>
+            <div style={{ ...styles.storage, color: theme.colors.textMuted }}>
               Storage: {storageStats.data.current_size_mb.toFixed(1)} / {storageStats.data.max_size_mb} MB
               ({storageStats.data.usage_percent}%)
             </div>
@@ -237,7 +251,14 @@ export default function App() {
             onMouseLeave={() => setHoveredToggleButton(false)}
             style={{
               ...styles.toggleFiltersButton,
-              ...(hoveredToggleButton ? styles.toggleFiltersButtonHover : {}),
+              backgroundColor: theme.colors.buttonBg,
+              borderColor: theme.colors.buttonBorder,
+              color: theme.colors.buttonText,
+              ...(hoveredToggleButton ? {
+                backgroundColor: theme.colors.buttonBgHover,
+                borderColor: theme.colors.borderSecondary,
+                color: theme.colors.textAccent,
+              } : {}),
             }}
             title={showFilters ? 'Hide filters' : 'Show filters'}
           >
@@ -248,7 +269,11 @@ export default function App() {
 
       {/* Controls */}
       {showFilters && (
-      <div style={styles.controls}>
+      <div style={{
+        ...styles.controls,
+        backgroundColor: theme.colors.bgTertiary,
+        borderBottomColor: theme.colors.borderPrimary,
+      }}>
         <div style={styles.controlRow}>
           <EnvSelector
             value={selectedEnv}
@@ -257,8 +282,13 @@ export default function App() {
 
           {/* Namespace is fixed to jio-t2r-ms - display only */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Namespace</label>
-            <div style={styles.fixedValue}>{FIXED_NAMESPACE}</div>
+            <label style={{ ...styles.label, color: theme.colors.textMuted }}>Namespace</label>
+            <div style={{
+              ...styles.fixedValue,
+              backgroundColor: theme.colors.bgPrimary,
+              borderColor: theme.colors.borderPrimary,
+              color: theme.colors.accentSecondary,
+            }}>{FIXED_NAMESPACE}</div>
           </div>
 
           <SearchableSelect
@@ -304,7 +334,14 @@ export default function App() {
           />
           
           {viewMode !== 'logs' && (
-            <button onClick={handleClearSearch} style={styles.clearButton}>
+            <button 
+              onClick={handleClearSearch} 
+              style={{
+                ...styles.clearButton,
+                borderColor: theme.colors.borderSecondary,
+                color: theme.colors.textSecondary,
+              }}
+            >
               Clear Filter
             </button>
           )}
@@ -312,9 +349,13 @@ export default function App() {
 
         {/* View mode indicator */}
         {viewMode !== 'logs' && (
-          <div style={styles.viewIndicator}>
+          <div style={{
+            ...styles.viewIndicator,
+            backgroundColor: theme.colors.bgHover,
+            color: theme.colors.textSecondary,
+          }}>
             {viewMode === 'search' && (
-              <span>Showing search results for: <strong>"{activeSearch}"</strong></span>
+              <span>Showing search results for: <strong style={{ color: theme.colors.accentPrimary }}>"{activeSearch}"</strong></span>
             )}
             {viewMode === 'time-window' && timeWindow && (() => {
               const baseTime = new Date(timeWindow.timestamp);
@@ -330,8 +371,8 @@ export default function App() {
               });
               return (
                 <span>
-                  Showing logs from <strong>{formatTime(startTime)}</strong> to <strong>{formatTime(endTime)}</strong>
-                  <span style={{ color: '#888', marginLeft: '8px' }}>
+                  Showing logs from <strong style={{ color: theme.colors.accentPrimary }}>{formatTime(startTime)}</strong> to <strong style={{ color: theme.colors.accentPrimary }}>{formatTime(endTime)}</strong>
+                  <span style={{ color: theme.colors.textMuted, marginLeft: '8px' }}>
                     (±{timeWindow.minutes} min around {formatTime(baseTime)})
                   </span>
                 </span>
@@ -345,15 +386,15 @@ export default function App() {
       {/* Log Table */}
       <main style={styles.main}>
         {!selectedEnv ? (
-          <div style={styles.placeholder}>
+          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
             Select an environment to view logs
           </div>
         ) : !service ? (
-          <div style={styles.placeholder}>
+          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
             Select a service to view pods
           </div>
         ) : !selectedPod ? (
-          <div style={styles.placeholder}>
+          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
             Select a pod to view logs
           </div>
         ) : (
@@ -373,7 +414,12 @@ export default function App() {
 
       {/* Error display */}
       {(currentQuery.error || fetchLogsMutation.error) && (
-        <div style={styles.error}>
+        <div style={{
+          ...styles.error,
+          backgroundColor: theme.colors.errorBg,
+          borderTopColor: theme.colors.error,
+          color: theme.colors.error,
+        }}>
           {(currentQuery.error as Error)?.message || (fetchLogsMutation.error as Error)?.message}
         </div>
       )}

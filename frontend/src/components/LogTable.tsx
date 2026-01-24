@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
+import { useTheme } from '../context/ThemeContext';
 
 interface LogTableProps {
   logs: LogEntry[];
@@ -19,6 +20,7 @@ interface LogTableProps {
 }
 
 export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+  const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
@@ -279,28 +281,31 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
    * Get style for log message based on severity.
    */
   const getMessageStyle = (severity: 'error' | 'warning' | 'exception' | null): React.CSSProperties => {
-    const baseStyle = styles.message;
+    const baseStyle = {
+      ...styles.message,
+      color: theme.colors.textPrimary,
+    };
     
     switch (severity) {
       case 'error':
         return {
           ...baseStyle,
           fontSize: '15px', // +2 from base 13px for better visibility
-          color: '#ff6b6b',
+          color: theme.colors.error,
           fontWeight: 500,
         };
       case 'exception':
         return {
           ...baseStyle,
           fontSize: '15px', // +2 from base 13px for better visibility
-          color: '#ff6b9d',
+          color: theme.colors.exception,
           fontWeight: 500,
         };
       case 'warning':
         return {
           ...baseStyle,
           fontSize: '15px', // +2 from base 13px for better visibility
-          color: '#ffaa00',
+          color: theme.colors.warning,
           fontWeight: 500,
         };
       default:
@@ -358,26 +363,30 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
    * Get row style based on severity for subtle background highlighting.
    */
   const getRowStyle = (severity: 'error' | 'warning' | 'exception' | null, isExpanded: boolean): React.CSSProperties => {
-    const baseStyle = isExpanded ? styles.expandedRow : styles.tr;
+    const baseStyle = {
+      ...(isExpanded ? styles.expandedRow : styles.tr),
+      borderBottomColor: theme.colors.borderPrimary,
+      backgroundColor: isExpanded ? theme.colors.bgSelected : 'transparent',
+    };
     
     switch (severity) {
       case 'error':
         return {
           ...baseStyle,
-          backgroundColor: isExpanded ? '#3a2525' : '#2a1f1f',
-          borderLeft: '3px solid #ff6b6b',
+          backgroundColor: theme.colors.errorBg,
+          borderLeft: `3px solid ${theme.colors.error}`,
         };
       case 'exception':
         return {
           ...baseStyle,
-          backgroundColor: isExpanded ? '#3a2528' : '#2a1f22',
-          borderLeft: '3px solid #ff6b9d',
+          backgroundColor: theme.colors.exceptionBg,
+          borderLeft: `3px solid ${theme.colors.exception}`,
         };
       case 'warning':
         return {
           ...baseStyle,
-          backgroundColor: isExpanded ? '#3a2f1f' : '#2a241f',
-          borderLeft: '3px solid #ffaa00',
+          backgroundColor: theme.colors.warningBg,
+          borderLeft: `3px solid ${theme.colors.warning}`,
         };
       default:
         return baseStyle;
@@ -410,8 +419,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             <mark
               key={index}
               style={{
-                backgroundColor: '#ffeb3b',
-                color: '#000',
+                backgroundColor: theme.colors.searchHighlight,
+                color: theme.colors.searchHighlightText,
                 padding: '1px 2px',
                 borderRadius: '2px',
                 fontWeight: 600,
