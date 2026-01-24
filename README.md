@@ -413,6 +413,27 @@ The log table has adjustable font size for better readability:
 5. Setting persists in browser localStorage
 6. Only affects log table data (timestamp, pod, message columns)
 
+### Downloading Logs
+
+Export logs to Excel for offline analysis or sharing:
+
+1. Click the **Download** dropdown button
+2. Choose an option:
+   - **Download Filtered Logs**: Exports currently displayed logs (with all active filters)
+   - **Download All Logs**: Exports complete POD logs (ignoring filters)
+3. Excel file includes: Timestamp, Environment, Namespace, Service, Pod, Container, Message
+4. Filename format: `filtered_logs_<pod-name>_<timestamp>.xlsx`
+
+### Ask AI (Log Analysis)
+
+Get instant AI analysis for any log entry:
+
+1. Hover over any log row
+2. Click the **Ask AI** button (star icon)
+3. Perplexity AI opens in a new tab with your log pre-loaded
+4. AI analyzes the log and suggests causes/solutions for errors
+5. Full prompt is also copied to clipboard for use with other AI services
+
 ### Themes & UI Customization
 
 The application includes **22 professional themes** for personalized viewing:

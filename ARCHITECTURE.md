@@ -342,7 +342,7 @@ frontend/src/
 │   ├── PodSelector.tsx     # Pod dropdown with status
 │   ├── SearchableSelect.tsx # Autocomplete dropdown
 │   ├── RefreshIndicator.tsx # Refresh button & auto-refresh (10s/30s/1m/2m/5m/10m)
-│   │   # LogTable features: font size controls, Copy button, Ask AI (ChatGPT) button
+│   │   # LogTable features: font size controls, Copy, Ask AI (Perplexity), Excel export
 │   └── ThemeSelector.tsx   # Theme dropdown
 │
 ├── config/
