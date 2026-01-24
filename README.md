@@ -78,6 +78,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | **Multi-line Support** | Proper handling of Java stack traces and multi-line entries |
 | **JSON Formatting** | Automatic pretty-printing of JSON payloads in log messages |
 | **Copy to Clipboard** | Floating "Copy" button on each log for easy sharing |
+| **Ask AI Integration** | Analyze logs with ChatGPT - copies formatted prompt and opens ChatGPT |
 | **Log Deduplication** | Hash-based deduplication prevents duplicate log storage |
 
 ### Search & Navigation

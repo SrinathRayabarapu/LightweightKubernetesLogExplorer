@@ -32,6 +32,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
+  const [hoveredChatGptButton, setHoveredChatGptButton] = useState<number | null>(null);
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
   const [showHeaders, setShowHeaders] = useState(true);
@@ -127,6 +128,34 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
         console.error('Failed to copy log:', fallbackError);
       }
     }
+  };
+
+  /**
+   * Open ChatGPT with the log message for analysis.
+   * Copies a formatted prompt to clipboard and opens ChatGPT in a new tab.
+   */
+  const handleAnalyzeWithChatGpt = async (log: LogEntry) => {
+    // Create a formatted prompt for ChatGPT
+    const prompt = `Please analyze this log entry and help me understand what it means. If there's an error or warning, suggest possible causes and solutions:
+
+Service: ${log.service}
+Pod: ${log.pod}
+Container: ${log.container}
+Timestamp: ${formatTimestamp(log.timestamp)}
+
+Log Message:
+${log.message}`;
+
+    // Copy the prompt to clipboard
+    try {
+      await navigator.clipboard.writeText(prompt);
+    } catch {
+      // Fallback - still open ChatGPT even if copy fails
+      console.warn('Could not copy to clipboard');
+    }
+
+    // Open ChatGPT in a new tab
+    window.open('https://chat.openai.com/', '_blank');
   };
 
   /**
@@ -664,19 +693,44 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                       <div style={styles.messageContainer}>
                         <pre style={getMessageStyle(severity)}>{highlightSearchMatches(formatJsonInMessage(log.message))}</pre>
                       </div>
-                      <button
-                        onClick={() => handleCopyLog(log)}
-                        onMouseEnter={() => setHoveredCopyButton(log.id)}
-                        onMouseLeave={() => setHoveredCopyButton(null)}
-                        style={{
-                          ...styles.copyButton,
-                          ...(hoveredCopyButton === log.id ? styles.copyButtonHovered : {}),
-                        }}
-                        title="Copy log content to clipboard"
-                        type="button"
-                      >
-                        Copy
-                      </button>
+                      <div style={styles.actionButtons}>
+                        <button
+                          onClick={() => handleCopyLog(log)}
+                          onMouseEnter={() => setHoveredCopyButton(log.id)}
+                          onMouseLeave={() => setHoveredCopyButton(null)}
+                          style={{
+                            ...styles.actionButton,
+                            ...(hoveredCopyButton === log.id ? styles.actionButtonHovered : {}),
+                          }}
+                          title="Copy log content to clipboard"
+                          type="button"
+                        >
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => handleAnalyzeWithChatGpt(log)}
+                          onMouseEnter={() => setHoveredChatGptButton(log.id)}
+                          onMouseLeave={() => setHoveredChatGptButton(null)}
+                          style={{
+                            ...styles.actionButton,
+                            ...styles.chatGptButton,
+                            ...(hoveredChatGptButton === log.id ? styles.chatGptButtonHovered : {}),
+                          }}
+                          title="Analyze with ChatGPT (copies prompt to clipboard)"
+                          type="button"
+                        >
+                          <svg 
+                            width="16" 
+                            height="16" 
+                            viewBox="0 0 24 24" 
+                            fill="currentColor"
+                            style={{ marginRight: '4px' }}
+                          >
+                            <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.4850 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+                          </svg>
+                          Ask AI
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -908,27 +962,47 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       wordBreak: 'break-word' as const,
       lineHeight: '1.5',
     }),
-    copyButton: {
+    actionButtons: {
       position: 'absolute' as const,
       top: '8px',
       right: '8px',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
+      zIndex: 5,
+    },
+    actionButton: {
       background: colors.buttonBg,
       border: `1px solid ${colors.buttonBorder}`,
       borderRadius: '6px',
-      fontSize: '13px',
+      fontSize: '12px',
       fontWeight: 500,
       cursor: 'pointer',
-      padding: '6px 12px',
+      padding: '5px 10px',
       color: colors.buttonText,
       transition: 'all 0.2s',
       whiteSpace: 'nowrap' as const,
-      zIndex: 5,
-      boxShadow: `0 2px 4px rgba(0, 0, 0, 0.2)`,
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    copyButtonHovered: {
+    actionButtonHovered: {
       background: colors.buttonBgHover,
       color: colors.textAccent,
       borderColor: colors.borderSecondary,
+    },
+    chatGptButton: {
+      background: 'linear-gradient(135deg, #10a37f 0%, #1a7f64 100%)',
+      borderColor: '#10a37f',
+      color: '#ffffff',
+    },
+    chatGptButtonHovered: {
+      background: 'linear-gradient(135deg, #1a7f64 0%, #10a37f 100%)',
+      borderColor: '#0d8a6f',
+      color: '#ffffff',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 8px rgba(16, 163, 127, 0.3)',
     },
     loading: {
       padding: '50px',
