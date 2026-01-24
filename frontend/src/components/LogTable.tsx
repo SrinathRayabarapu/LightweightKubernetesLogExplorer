@@ -21,6 +21,12 @@ interface LogTableProps {
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
+// Font size constants
+const MIN_FONT_SIZE = 10;
+const MAX_FONT_SIZE = 22;
+const DEFAULT_FONT_SIZE = 14;
+const FONT_SIZE_STORAGE_KEY = 'logTableFontSize';
+
 export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -33,6 +39,36 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Font size state with localStorage persistence
+  const [fontSize, setFontSize] = useState<number>(() => {
+    const saved = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed >= MIN_FONT_SIZE && parsed <= MAX_FONT_SIZE) {
+        return parsed;
+      }
+    }
+    return DEFAULT_FONT_SIZE;
+  });
+
+  // Persist font size to localStorage
+  useEffect(() => {
+    localStorage.setItem(FONT_SIZE_STORAGE_KEY, fontSize.toString());
+  }, [fontSize]);
+
+  // Font size handlers
+  const handleIncreaseFontSize = () => {
+    setFontSize(prev => Math.min(prev + 1, MAX_FONT_SIZE));
+  };
+
+  const handleDecreaseFontSize = () => {
+    setFontSize(prev => Math.max(prev - 1, MIN_FONT_SIZE));
+  };
+
+  const handleResetFontSize = () => {
+    setFontSize(DEFAULT_FONT_SIZE);
+  };
 
   // Dynamic styles based on current theme
   const styles = getThemedStyles(theme.colors);
@@ -286,10 +322,11 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
 
   /**
    * Get style for log message based on severity.
+   * Uses the current fontSize state for dynamic font sizing.
    */
   const getMessageStyle = (severity: 'error' | 'warning' | 'exception' | null): React.CSSProperties => {
     const baseStyle = {
-      ...styles.message,
+      ...styles.message(fontSize),
       color: theme.colors.textPrimary,
     };
     
@@ -543,6 +580,42 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             <span style={styles.loadingText}>Refreshing...</span>
           </div>
         )}
+        
+        {/* Font Size Controls */}
+        <div style={styles.fontSizeControls}>
+          <span style={styles.fontSizeLabel}>Font:</span>
+          <button
+            onClick={handleDecreaseFontSize}
+            disabled={fontSize <= MIN_FONT_SIZE}
+            style={{
+              ...styles.fontSizeButton,
+              opacity: fontSize <= MIN_FONT_SIZE ? 0.4 : 1,
+              cursor: fontSize <= MIN_FONT_SIZE ? 'not-allowed' : 'pointer',
+            }}
+            title="Decrease font size"
+          >
+            −
+          </button>
+          <span 
+            style={styles.fontSizeValue}
+            onClick={handleResetFontSize}
+            title="Click to reset to default (14px)"
+          >
+            {fontSize}px
+          </span>
+          <button
+            onClick={handleIncreaseFontSize}
+            disabled={fontSize >= MAX_FONT_SIZE}
+            style={{
+              ...styles.fontSizeButton,
+              opacity: fontSize >= MAX_FONT_SIZE ? 0.4 : 1,
+              cursor: fontSize >= MAX_FONT_SIZE ? 'not-allowed' : 'pointer',
+            }}
+            title="Increase font size"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       <div ref={tableWrapperRef} style={styles.tableWrapper}>
@@ -570,7 +643,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                     <div
                       onClick={() => handleTimestampClick(log.timestamp, log.id)}
                       style={{
-                        ...styles.timestamp,
+                        ...styles.timestamp(fontSize),
                         ...(selectedTimestamp === log.timestamp ? styles.timestampSelected : {}),
                       }}
                     >
@@ -584,7 +657,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                     )}
                   </td>
                   <td style={styles.tdPod}>
-                    <div style={styles.podName}>{log.pod}</div>
+                    <div style={styles.podName(fontSize)}>{log.pod}</div>
                   </td>
                   <td style={styles.tdMessage}>
                     <div style={styles.messageWrapper}>
@@ -776,13 +849,13 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       minWidth: '175px',
       maxWidth: '175px',
     },
-    timestamp: {
+    timestamp: (fontSize: number) => ({
       fontFamily: 'var(--font-family-mono, monospace)',
-      fontSize: '14px',
+      fontSize: `${fontSize}px`,
       color: colors.timestamp,
       cursor: 'pointer',
       whiteSpace: 'nowrap' as const,
-    },
+    }),
     timestampSelected: {
       backgroundColor: colors.bgSelected,
       borderRadius: '4px',
@@ -797,13 +870,13 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       minWidth: '250px',
       maxWidth: '250px',
     },
-    podName: {
+    podName: (fontSize: number) => ({
       fontFamily: 'var(--font-family-mono, monospace)',
-      fontSize: '14px',
+      fontSize: `${fontSize}px`,
       color: colors.podName,
       wordBreak: 'break-word' as const,
       overflowWrap: 'break-word' as const,
-    },
+    }),
     containerName: {
       fontFamily: 'var(--font-family-mono, monospace)',
       fontSize: '13px',
@@ -826,15 +899,15 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       borderRadius: '6px',
       padding: '8px 12px',
     },
-    message: {
+    message: (fontSize: number) => ({
       margin: 0,
       fontFamily: 'var(--font-family-mono, monospace)',
-      fontSize: '14px',
+      fontSize: `${fontSize}px`,
       color: colors.textPrimary,
       whiteSpace: 'pre-wrap' as const,
       wordBreak: 'break-word' as const,
       lineHeight: '1.5',
-    },
+    }),
     copyButton: {
       position: 'absolute' as const,
       top: '8px',
@@ -902,6 +975,43 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     },
     loadingText: {
       color: colors.textMuted,
+    },
+    fontSizeControls: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      marginLeft: 'auto',
+      padding: '4px 8px',
+      backgroundColor: colors.bgSecondary,
+      borderRadius: '6px',
+      border: `1px solid ${colors.borderPrimary}`,
+    },
+    fontSizeLabel: {
+      fontSize: '12px',
+      color: colors.textMuted,
+      fontWeight: 500,
+    },
+    fontSizeButton: {
+      width: '28px',
+      height: '28px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '16px',
+      fontWeight: 600,
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '4px',
+      backgroundColor: colors.buttonBg,
+      color: colors.buttonText,
+      transition: 'all 0.2s',
+    },
+    fontSizeValue: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: colors.textPrimary,
+      minWidth: '36px',
+      textAlign: 'center' as const,
+      cursor: 'pointer',
     },
   };
 }

@@ -101,6 +101,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | **Fixed Column Widths** | Timestamp and Pod columns maintain consistent width |
 | **Responsive Design** | Clean, modern interface optimized for log viewing |
 | **Millisecond Precision** | Timestamps display with millisecond accuracy |
+| **Adjustable Font Size** | + and − controls to adjust log table font size (10px-22px) |
 
 ## Requirements
 
@@ -398,6 +399,17 @@ npm run preview
    - **1m, 2m** - For active debugging
    - **5m, 10m** - For passive monitoring
 3. ALL logs will be fetched on each refresh cycle
+
+### Adjusting Font Size
+
+The log table has adjustable font size for better readability:
+
+1. Use **−** button to decrease font size
+2. Use **+** button to increase font size
+3. Click the **size value** (e.g., "14px") to reset to default
+4. Range: 10px to 22px
+5. Setting persists in browser localStorage
+6. Only affects log table data (timestamp, pod, message columns)
 
 ### Themes & UI Customization
 
