@@ -14,12 +14,14 @@ interface LogTableProps {
   isLoading: boolean;
   filteredCount?: number; // Number of logs excluded by filters
   filterPatterns?: string[]; // Patterns used for filtering
+  filtersEnabled?: boolean; // Whether log filters are currently applied
+  onToggleFilters?: () => void; // Callback to toggle log filters on/off
   searchQuery?: string; // Current search query for highlighting matches
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
@@ -496,6 +498,20 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                 ({filteredCount} filtered)
               </span>
             </div>
+            {onToggleFilters && (
+              <button
+                onClick={onToggleFilters}
+                style={{
+                  ...styles.filterToggleButton,
+                  backgroundColor: filtersEnabled ? theme.colors.buttonBg : theme.colors.accentSecondary,
+                  color: filtersEnabled ? theme.colors.textSecondary : '#fff',
+                  borderColor: filtersEnabled ? theme.colors.buttonBorder : theme.colors.accentSecondary,
+                }}
+                title={filtersEnabled ? 'Show all logs including filtered' : 'Hide filtered logs'}
+              >
+                {filtersEnabled ? '👁 Show All' : '🚫 Filtering Off'}
+              </button>
+            )}
             {showFilterTooltip && filterPatterns.length > 0 && tooltipPosition && (
               <div
                 ref={tooltipRef}
@@ -534,8 +550,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
           {showHeaders && (
             <thead>
               <tr>
-                <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
-                <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
+                <th style={{ ...styles.th, width: '175px', minWidth: '175px', maxWidth: '175px', paddingRight: '24px' }}>Timestamp</th>
+                <th style={{ ...styles.th, width: '250px', minWidth: '250px', maxWidth: '250px', paddingLeft: '24px' }}>Pod</th>
                 <th style={styles.th}>Message</th>
               </tr>
             </thead>
@@ -569,7 +585,6 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                   </td>
                   <td style={styles.tdPod}>
                     <div style={styles.podName}>{log.pod}</div>
-                    <div style={styles.containerName}>{log.container}</div>
                   </td>
                   <td style={styles.tdMessage}>
                     <div style={styles.messageWrapper}>
@@ -664,6 +679,16 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       fontStyle: 'italic' as const,
       cursor: 'help',
     },
+    filterToggleButton: {
+      padding: '4px 10px',
+      fontSize: '12px',
+      fontWeight: 500,
+      border: '1px solid',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      whiteSpace: 'nowrap' as const,
+    },
     filterTooltip: {
       position: 'fixed' as const,
       backgroundColor: colors.bgTertiary,
@@ -722,6 +747,7 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     },
     table: {
       width: '100%',
+      tableLayout: 'fixed' as const,
       borderCollapse: 'collapse' as const,
       fontSize: '14px',
     },
@@ -743,8 +769,12 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       backgroundColor: colors.bgHover,
     },
     tdTimestamp: {
-      padding: '10px 16px',
+      padding: '10px 16px 10px 16px',
+      paddingRight: '24px',
       verticalAlign: 'top' as const,
+      width: '175px',
+      minWidth: '175px',
+      maxWidth: '175px',
     },
     timestamp: {
       fontFamily: 'var(--font-family-mono, monospace)',
@@ -761,13 +791,18 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     },
     tdPod: {
       padding: '10px 16px',
+      paddingLeft: '24px',
       verticalAlign: 'top' as const,
+      width: '250px',
+      minWidth: '250px',
+      maxWidth: '250px',
     },
     podName: {
       fontFamily: 'var(--font-family-mono, monospace)',
       fontSize: '14px',
       color: colors.podName,
-      wordBreak: 'break-all' as const,
+      wordBreak: 'break-word' as const,
+      overflowWrap: 'break-word' as const,
     },
     containerName: {
       fontFamily: 'var(--font-family-mono, monospace)',
@@ -781,12 +816,10 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     },
     messageWrapper: {
       position: 'relative' as const,
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '10px',
+      width: '100%',
     },
     messageContainer: {
-      flex: 1,
+      width: '100%',
       maxHeight: '300px',
       overflow: 'auto' as const,
       backgroundColor: colors.bgPrimary,
@@ -803,6 +836,9 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       lineHeight: '1.5',
     },
     copyButton: {
+      position: 'absolute' as const,
+      top: '8px',
+      right: '8px',
       background: colors.buttonBg,
       border: `1px solid ${colors.buttonBorder}`,
       borderRadius: '6px',
@@ -812,9 +848,9 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       padding: '6px 12px',
       color: colors.buttonText,
       transition: 'all 0.2s',
-      flexShrink: 0,
-      alignSelf: 'flex-start' as const,
       whiteSpace: 'nowrap' as const,
+      zIndex: 5,
+      boxShadow: `0 2px 4px rgba(0, 0, 0, 0.2)`,
     },
     copyButtonHovered: {
       background: colors.buttonBgHover,

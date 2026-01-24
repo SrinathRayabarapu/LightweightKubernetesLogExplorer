@@ -56,6 +56,7 @@ class FetchLogsRequest(BaseModel):
     namespace: str
     service: str
     pod: Optional[str] = None  # Optional: fetch logs for specific pod only
+    fetchAll: bool = False  # If True, fetch ALL available logs (no tail limit)
 
 
 class PodInfo(BaseModel):

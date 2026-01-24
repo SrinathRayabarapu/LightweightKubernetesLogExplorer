@@ -67,11 +67,13 @@ async def fetch_logs(request: FetchLogsRequest):
         raise HTTPException(status_code=400, detail=str(e))
     
     # Collect logs (optionally filtered by pod)
+    # If fetchAll is True, fetch ALL available logs without tail limit
     result = await collect_logs(
         env=request.env,
         namespace=request.namespace,
         service=request.service,
         pod_filter=request.pod,
+        fetch_all=request.fetchAll,
     )
     
     if not result["success"]:

@@ -40,6 +40,7 @@ export default function App() {
   const [selectedPod, setSelectedPod] = useState('');
   const [showFilters, setShowFilters] = useState(true); // Toggle filter visibility
   const [hoveredToggleButton, setHoveredToggleButton] = useState(false);
+  const [applyLogFilters, setApplyLogFilters] = useState(true); // Toggle log exclusion filters
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,8 +56,9 @@ export default function App() {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('logs');
 
-  // Pagination - default 500 logs per page (matches backend batch size)
-  const [limit] = useState(500);
+  // Pagination - default 1000 logs per page
+  // All logs are fetched from K8s and stored, UI displays in batches
+  const [limit] = useState(1000);
   const [offset, setOffset] = useState(0);
 
   // Auto-refresh state
@@ -167,10 +169,11 @@ export default function App() {
     setOffset(0);
   }, []);
 
-  // Manual refresh handler
+  // Manual refresh handler - fetches ALL available logs
   const handleManualRefresh = useCallback(() => {
     if (selectedEnv && namespace && service && selectedPod) {
-      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod });
+      // Always fetch ALL logs (no tail limit) to ensure complete log history
+      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
     }
   }, [selectedEnv, namespace, service, selectedPod, fetchLogsMutation]);
 
@@ -179,10 +182,13 @@ export default function App() {
     setOffset(prev => prev + limit);
   }, [limit]);
 
-  // Auto-fetch logs when pod is selected
+  // Auto-fetch ALL logs when pod is selected
+  // This fetches complete log history from K8s and stores in database
+  // UI displays first batch, "Load More" shows subsequent batches from stored data
   useEffect(() => {
     if (selectedEnv && namespace && service && selectedPod) {
-      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod });
+      // Fetch ALL logs (no tail limit) to get complete log history
+      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPod]); // Only trigger when pod changes
@@ -201,12 +207,13 @@ export default function App() {
     }
   }, [selectedPod, searchQuery, activeSearch, viewMode]);
 
-  // Auto-refresh effect
+  // Auto-refresh effect - fetches ALL logs on each interval
   useEffect(() => {
     if (!autoRefreshEnabled || !selectedEnv || !namespace || !service || !selectedPod) return;
 
     const intervalId = setInterval(() => {
-      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod });
+      // Always fetch ALL logs to ensure complete history
+      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
     }, refreshInterval * 1000);
 
     return () => clearInterval(intervalId);
@@ -218,10 +225,11 @@ export default function App() {
                        logsQuery;
 
   // Apply log exclusion filters to remove unwanted logs (healthchecks, etc.)
+  // User can toggle this off to see all logs including filtered ones
   const rawLogs = currentQuery.data?.logs || [];
-  const logs = filterLogs(rawLogs);
+  const logs = applyLogFilters ? filterLogs(rawLogs) : rawLogs;
   const total = currentQuery.data?.total || 0;
-  const filteredCount = rawLogs.length - logs.length;
+  const filteredCount = rawLogs.length - filterLogs(rawLogs).length; // Always calculate for display
   const hasMore = currentQuery.data?.hasMore || false;
 
   return (
@@ -405,6 +413,8 @@ export default function App() {
             isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
             filteredCount={filteredCount}
             filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
+            filtersEnabled={applyLogFilters}
+            onToggleFilters={() => setApplyLogFilters(!applyLogFilters)}
             searchQuery={activeSearch}
             onLoadMore={handleLoadMore}
             onTimeNavigate={handleTimeNavigate}

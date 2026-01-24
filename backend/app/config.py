@@ -71,11 +71,14 @@ class Settings:
     VERSION: str = "1.0.0"
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "logs.db")
     MAX_DB_SIZE_MB: int = 100
-    DEFAULT_LOG_LIMIT: int = 100
-    MAX_LOG_LIMIT: int = 1000
+    DEFAULT_LOG_LIMIT: int = 500
+    MAX_LOG_LIMIT: int = 10000
     # Log fetching batch settings
-    LOG_FETCH_BATCH_SIZE: int = int(os.getenv("LOG_FETCH_BATCH_SIZE", "500"))  # Number of log lines per batch (for --tail)
-    LOG_FETCH_TIMEOUT: int = int(os.getenv("LOG_FETCH_TIMEOUT", "30"))  # Timeout per fetch in seconds
+    # LOG_FETCH_BATCH_SIZE: Number of log lines to fetch from kubectl
+    # Set to 0 or None to fetch ALL available logs (no --tail limit)
+    # Default: 5000 lines to get a substantial log history
+    LOG_FETCH_BATCH_SIZE: int = int(os.getenv("LOG_FETCH_BATCH_SIZE", "5000"))
+    LOG_FETCH_TIMEOUT: int = int(os.getenv("LOG_FETCH_TIMEOUT", "60"))  # Timeout per fetch in seconds (increased for larger fetches)
 
 
 settings = Settings()
