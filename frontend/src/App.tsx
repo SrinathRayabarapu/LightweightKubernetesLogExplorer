@@ -33,6 +33,9 @@ export default function App() {
   const namespace = FIXED_NAMESPACE; // Fixed namespace - not user-selectable
   const [service, setService] = useState('');
   const [selectedPod, setSelectedPod] = useState('');
+  const [showFilters, setShowFilters] = useState(true); // Toggle filter visibility
+  const [hoveredToggleButton, setHoveredToggleButton] = useState(false);
+  const [showFilters, setShowFilters] = useState(true); // Toggle filter visibility
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -222,15 +225,30 @@ export default function App() {
       {/* Header */}
       <header style={styles.header}>
         <h1 style={styles.title}>K8s Log Explorer</h1>
-        {storageStats.data && (
-          <div style={styles.storage}>
-            Storage: {storageStats.data.current_size_mb.toFixed(1)} / {storageStats.data.max_size_mb} MB
-            ({storageStats.data.usage_percent}%)
-          </div>
-        )}
+        <div style={styles.headerRight}>
+          {storageStats.data && (
+            <div style={styles.storage}>
+              Storage: {storageStats.data.current_size_mb.toFixed(1)} / {storageStats.data.max_size_mb} MB
+              ({storageStats.data.usage_percent}%)
+            </div>
+          )}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            onMouseEnter={() => setHoveredToggleButton(true)}
+            onMouseLeave={() => setHoveredToggleButton(false)}
+            style={{
+              ...styles.toggleFiltersButton,
+              ...(hoveredToggleButton ? styles.toggleFiltersButtonHover : {}),
+            }}
+            title={showFilters ? 'Hide filters' : 'Show filters'}
+          >
+            {showFilters ? '▼' : '▲'} Filters
+          </button>
+        </div>
       </header>
 
       {/* Controls */}
+      {showFilters && (
       <div style={styles.controls}>
         <div style={styles.controlRow}>
           <EnvSelector
@@ -308,6 +326,7 @@ export default function App() {
           </div>
         )}
       </div>
+      )}
 
       {/* Log Table */}
       <main style={styles.main}>
@@ -369,9 +388,33 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     color: '#fff',
   },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+  },
   storage: {
     fontSize: '12px',
     color: '#888',
+  },
+  toggleFiltersButton: {
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: 500,
+    backgroundColor: '#2a2a40',
+    border: '1px solid #444',
+    borderRadius: '4px',
+    color: '#ccc',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  toggleFiltersButtonHover: {
+    backgroundColor: '#3a3a5a',
+    borderColor: '#555',
+    color: '#fff',
   },
   controls: {
     padding: '16px 20px',
