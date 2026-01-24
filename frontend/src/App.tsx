@@ -316,12 +316,27 @@ export default function App() {
             {viewMode === 'search' && (
               <span>Showing search results for: <strong>"{activeSearch}"</strong></span>
             )}
-            {viewMode === 'time-window' && timeWindow && (
-              <span>
-                Showing logs ±{timeWindow.minutes} minutes around{' '}
-                <strong>{new Date(timeWindow.timestamp).toLocaleString()}</strong>
-              </span>
-            )}
+            {viewMode === 'time-window' && timeWindow && (() => {
+              const baseTime = new Date(timeWindow.timestamp);
+              const startTime = new Date(baseTime.getTime() - timeWindow.minutes * 60 * 1000);
+              const endTime = new Date(baseTime.getTime() + timeWindow.minutes * 60 * 1000);
+              const formatTime = (date: Date) => date.toLocaleString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              });
+              return (
+                <span>
+                  Showing logs from <strong>{formatTime(startTime)}</strong> to <strong>{formatTime(endTime)}</strong>
+                  <span style={{ color: '#888', marginLeft: '8px' }}>
+                    (±{timeWindow.minutes} min around {formatTime(baseTime)})
+                  </span>
+                </span>
+              );
+            })()}
           </div>
         )}
       </div>
