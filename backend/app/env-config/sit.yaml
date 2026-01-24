@@ -1,0 +1,8 @@
+envName: sit
+kubectlContext: sit-cluster
+defaultNamespace: jio-t2r-ms
+allowedNamespaces:
+  - jio-t2r-ms
+  - default
+  - kube-system
+refreshInterval: 300
