@@ -25,7 +25,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);

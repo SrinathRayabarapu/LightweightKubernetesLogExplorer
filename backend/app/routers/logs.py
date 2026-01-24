@@ -24,7 +24,7 @@ async def list_logs(
     namespace: Optional[str] = Query(None, description="Namespace filter"),
     service: Optional[str] = Query(None, description="Service filter"),
     pod: Optional[str] = Query(None, description="Pod filter"),
-    limit: int = Query(100, ge=1, le=1000, description="Max logs to return"),
+    limit: int = Query(500, ge=1, le=1000, description="Max logs to return"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
 ):
     """
@@ -98,7 +98,7 @@ async def search(
     pod: Optional[str] = Query(None, description="Pod filter"),
     start_time: Optional[datetime] = Query(None, description="Start time filter"),
     end_time: Optional[datetime] = Query(None, description="End time filter"),
-    limit: int = Query(100, ge=1, le=1000, description="Max results"),
+    limit: int = Query(500, ge=1, le=1000, description="Max results"),
 ):
     """
     Full-text search across logs.
@@ -136,7 +136,7 @@ async def get_logs_by_time(
     direction: str = Query("after", description="Direction: before, after, or around"),
     namespace: Optional[str] = Query(None, description="Namespace filter"),
     service: Optional[str] = Query(None, description="Service filter"),
-    limit: int = Query(100, ge=1, le=1000, description="Max results"),
+    limit: int = Query(500, ge=1, le=1000, description="Max results"),
 ):
     """
     Get logs within a time window around a specific timestamp.

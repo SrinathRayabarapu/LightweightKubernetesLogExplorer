@@ -26,7 +26,7 @@ export function useServices(env: string, namespace: string, fromCluster = false)
     queryFn: () => api.getServices(env, namespace, fromCluster),
     enabled: !!env && !!namespace,
     staleTime: 0, // Always consider data stale - fetch fresh on every request
-    cacheTime: 0, // Don't cache - always fetch from cluster
+    gcTime: 0, // Don't cache - always fetch from cluster (renamed from cacheTime in v5)
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window regains focus
   });
@@ -38,7 +38,7 @@ export function usePods(env: string, namespace: string, service: string) {
     queryFn: () => api.getPods(env, namespace, service),
     enabled: !!env && !!namespace && !!service,
     staleTime: 0, // Always consider data stale - fetch fresh on every request
-    cacheTime: 0, // Don't cache - always fetch from cluster
+    gcTime: 0, // Don't cache - always fetch from cluster (renamed from cacheTime in v5)
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: true, // Refetch when window regains focus
   });

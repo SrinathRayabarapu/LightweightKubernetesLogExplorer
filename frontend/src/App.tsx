@@ -50,8 +50,8 @@ export default function App() {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('logs');
 
-  // Pagination
-  const [limit] = useState(100);
+  // Pagination - default 500 logs per page (matches backend batch size)
+  const [limit] = useState(500);
   const [offset, setOffset] = useState(0);
 
   // Auto-refresh state
