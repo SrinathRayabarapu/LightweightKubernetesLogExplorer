@@ -35,7 +35,6 @@ export default function App() {
   const [selectedPod, setSelectedPod] = useState('');
   const [showFilters, setShowFilters] = useState(true); // Toggle filter visibility
   const [hoveredToggleButton, setHoveredToggleButton] = useState(false);
-  const [showFilters, setShowFilters] = useState(true); // Toggle filter visibility
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
