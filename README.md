@@ -23,10 +23,13 @@ A lightweight, local web application for exploring Kubernetes logs across multip
   - [Searching Logs](#searching-logs)
   - [Time Navigation](#time-navigation)
   - [Auto-Refresh](#auto-refresh)
+  - [Themes & UI Customization](#themes--ui-customization)
+  - [UI Features](#ui-features)
 - [Architecture](#architecture)
 - [API Reference](#api-reference)
 - [Storage & Retention](#storage--retention)
 - [Configuration Reference](#configuration-reference)
+- [Recent Updates](#recent-updates)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
 - [Development](#development)
@@ -49,11 +52,20 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 ## Features
 
 - **Multi-environment support**: Configure multiple Kubernetes clusters (sit, replica, prod)
-- **Full-text search**: SQLite FTS5-powered search across log messages
+- **Full-text search**: SQLite FTS5-powered search across log messages with highlighted matches
 - **Time-based navigation**: Splunk-style log exploration with +5min/+10min windows
-- **Auto-refresh**: Configurable automatic log fetching
+- **Auto-refresh**: Configurable automatic log fetching (1m, 2m, 5m, 10m intervals)
 - **Storage management**: 100 MB cap with automatic cleanup of old logs
 - **Production warning**: Confirmation dialog when accessing production logs
+- **22 Beautiful Themes**: Dark and light themes including Bootstrap-inspired options (Darkly, Cyborg, Flatly, Cosmo, etc.)
+- **Bootstrap CSS**: Standardized styling with Bootstrap CSS for consistent fonts and colors
+- **Auto-hiding headers**: Table headers automatically hide when scrolling down for cleaner log viewing
+- **Log highlighting**: Error, warning, and exception logs are highlighted with color-coded backgrounds
+- **Batch log fetching**: Efficient batch fetching (500 logs per batch) with "Load More" pagination
+- **JSON formatting**: Automatic formatting of JSON payloads in log messages for better readability
+- **Multi-line log support**: Proper handling of Java stack traces and multi-line log entries
+- **Log filtering**: Configurable exclusion patterns to filter out unwanted logs (healthchecks, etc.)
+- **Copy to clipboard**: One-click copy of full log content for sharing and analysis
 
 ## Requirements
 
@@ -309,6 +321,53 @@ npm run preview
 2. Click ⚙ to adjust the refresh interval (1m, 2m, 5m, 10m)
 3. Logs will be fetched automatically from Kubernetes
 
+### Themes & UI Customization
+
+The application includes **22 professional themes** for personalized viewing:
+
+#### Dark Themes (11)
+- **Classic Dark** - Original dark blue theme (default)
+- **Midnight** - Refined dark with soft blue undertones
+- **Ocean** - Deep blue with calming teal accents
+- **Forest** - Calming dark green theme
+- **Slate** - Professional gray tones
+- **Sunset** - Warm dark theme with orange accents
+- **Lavender** - Soft purple tones
+- **Coffee** - Warm sepia tones
+- **Darkly** - Bootstrap Darkly-inspired theme
+- **Cyborg** - Tech-inspired dark theme with cyan highlights
+- **Superhero** - Dark theme with orange accents
+
+#### Light Themes (11)
+- **Daylight** - Clean, warm light theme
+- **Arctic** - Cool light gray theme
+- **Paper** - Warm off-white theme
+- **Mint** - Fresh green-tinted light theme
+- **Rose** - Soft pink-tinted light theme
+- **Sky** - Blue-tinted light theme
+- **Sand** - Warm beige light theme
+- **Lavender Light** - Soft purple light theme
+- **Flatly** - Bootstrap Flatly-inspired flat design
+- **Cosmo** - Clean modern with blue accents
+- **United** - Light theme with Ubuntu-inspired orange
+
+**To change themes:**
+1. Click the **Theme** dropdown in the header
+2. Select your preferred theme
+3. Theme preference is saved in browser localStorage
+
+### UI Features
+
+- **Bootstrap CSS**: Standardized styling ensures consistent fonts, colors, and spacing across all components
+- **Auto-hiding headers**: Table headers automatically hide when scrolling down and reappear when scrolled to the top
+- **Log severity highlighting**: 
+  - Error logs: Red background with red text
+  - Warning logs: Orange/yellow background with orange text
+  - Exception logs: Pink background with pink text
+- **Search highlighting**: Matched search terms are highlighted in yellow for easy identification
+- **Responsive design**: Clean, modern interface optimized for log viewing
+- **Millisecond precision**: Timestamps display with millisecond precision for accurate log ordering
+
 ## Architecture
 
 ```
@@ -356,10 +415,11 @@ backend/
 | `/envs` | GET | List environments |
 | `/namespaces` | GET | List namespaces |
 | `/services` | GET | List services |
-| `/logs` | GET | Get logs with filters |
-| `/logs/fetch` | POST | Fetch logs from K8s |
-| `/logs/search` | GET | Full-text search |
-| `/logs/by-time` | GET | Time-window query |
+| `/pods` | GET | List pods for a service |
+| `/logs` | GET | Get logs with filters (supports pagination with `limit` and `offset`) |
+| `/logs/fetch` | POST | Fetch logs from K8s (batch fetching, default 500 lines) |
+| `/logs/search` | GET | Full-text search with FTS5 |
+| `/logs/by-time` | GET | Time-window query (±minutes around timestamp) |
 | `/logs/storage` | GET | Storage statistics |
 | `/refresh/subscribe` | POST | Enable auto-refresh |
 | `/refresh/unsubscribe` | POST | Disable auto-refresh |
@@ -398,8 +458,26 @@ Logs are deduplicated using a hash of:
 |---------|---------|-------------|
 | `DATABASE_PATH` | `logs.db` | SQLite database file |
 | `MAX_DB_SIZE_MB` | 100 | Storage cap in megabytes |
-| `DEFAULT_LOG_LIMIT` | 100 | Default logs per query |
+| `DEFAULT_LOG_LIMIT` | 500 | Default logs per query (matches batch size) |
 | `MAX_LOG_LIMIT` | 1000 | Maximum logs per query |
+| `BATCH_FETCH_SIZE` | 500 | Number of log lines fetched per batch from kubectl |
+
+### Log Filtering (`frontend/src/config/logFilters.ts`)
+
+Configure patterns to exclude unwanted logs from display:
+
+```typescript
+export const logFilterConfig = {
+  excludePatterns: [
+    'healthcheck',
+    'liveness probe',
+    'readiness probe',
+    // Add your custom patterns here
+  ],
+};
+```
+
+Patterns are case-insensitive and match anywhere in the log message.
 
 ## Troubleshooting
 
@@ -558,6 +636,35 @@ lsof -ti:8000 | xargs kill -9
 # Frontend (port 5173)
 lsof -ti:5173 | xargs kill -9
 ```
+
+## Recent Updates
+
+### UI & Theming Enhancements
+- ✅ **Bootstrap CSS Integration**: Standardized styling with Bootstrap CSS for consistent fonts, colors, and spacing
+- ✅ **22 Professional Themes**: Added comprehensive theme system with 11 dark and 11 light themes, including Bootstrap-inspired options (Darkly, Cyborg, Flatly, Cosmo, United, Superhero)
+- ✅ **Auto-hiding Table Headers**: Headers automatically hide when scrolling down and reappear when scrolled to the top
+- ✅ **Font Size Standardization**: All fonts standardized to Bootstrap-compliant sizes for better readability
+- ✅ **Theme Persistence**: Theme selection saved in browser localStorage
+
+### Log Viewing Improvements
+- ✅ **Batch Log Fetching**: Efficient batch fetching (500 logs per batch) with "Load More" pagination
+- ✅ **Search Highlighting**: Matched search terms highlighted in yellow for easy identification
+- ✅ **Log Severity Highlighting**: Error, warning, and exception logs highlighted with color-coded backgrounds
+- ✅ **JSON Formatting**: Automatic formatting of JSON payloads (`requestPayload`, `responsePayload`) in log messages
+- ✅ **Multi-line Log Support**: Proper handling of Java stack traces and multi-line log entries
+- ✅ **Millisecond Precision**: Timestamps display with millisecond precision for accurate log ordering
+
+### Performance & Stability
+- ✅ **Robust Backend Stability**: Fixed segmentation faults with improved subprocess handling and database concurrency control
+- ✅ **Graceful Shutdown**: Proper cleanup of background tasks and database connections on application shutdown
+- ✅ **Error Handling**: Comprehensive error handling for database operations and kubectl subprocess execution
+
+### UX Improvements
+- ✅ **Service → Pod Flow**: Improved UI flow: Environment → Service → Pod → Logs with automatic pod list fetching
+- ✅ **Log Count Visibility**: Display total number of logs retrieved with filtered count indicator
+- ✅ **Copy to Clipboard**: One-click copy of full log content for sharing and analysis
+- ✅ **Time Navigation Display**: Show calculated time range when using ±5min/±10min navigation
+- ✅ **Log Filtering**: Configurable exclusion patterns to filter out unwanted logs (healthchecks, etc.)
 
 ## Limitations
 
