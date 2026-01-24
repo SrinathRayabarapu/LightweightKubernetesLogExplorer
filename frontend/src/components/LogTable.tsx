@@ -535,7 +535,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             <thead>
               <tr>
                 <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
-                <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
+                <th style={{ ...styles.th, width: '180px' }}>Pod</th>
                 <th style={styles.th}>Message</th>
               </tr>
             </thead>
@@ -569,7 +569,6 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                   </td>
                   <td style={styles.tdPod}>
                     <div style={styles.podName}>{log.pod}</div>
-                    <div style={styles.containerName}>{log.container}</div>
                   </td>
                   <td style={styles.tdMessage}>
                     <div style={styles.messageWrapper}>
@@ -781,12 +780,10 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     },
     messageWrapper: {
       position: 'relative' as const,
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '10px',
+      width: '100%',
     },
     messageContainer: {
-      flex: 1,
+      width: '100%',
       maxHeight: '300px',
       overflow: 'auto' as const,
       backgroundColor: colors.bgPrimary,
@@ -803,6 +800,9 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       lineHeight: '1.5',
     },
     copyButton: {
+      position: 'absolute' as const,
+      top: '8px',
+      right: '8px',
       background: colors.buttonBg,
       border: `1px solid ${colors.buttonBorder}`,
       borderRadius: '6px',
@@ -812,9 +812,9 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       padding: '6px 12px',
       color: colors.buttonText,
       transition: 'all 0.2s',
-      flexShrink: 0,
-      alignSelf: 'flex-start' as const,
       whiteSpace: 'nowrap' as const,
+      zIndex: 5,
+      boxShadow: `0 2px 4px rgba(0, 0, 0, 0.2)`,
     },
     copyButtonHovered: {
       background: colors.buttonBgHover,
