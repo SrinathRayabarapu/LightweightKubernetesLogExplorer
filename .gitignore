@@ -69,6 +69,11 @@ Thumbs.db
 logs/
 *.log.*
 
+# Process ID files (created by start scripts)
+.backend.pid
+.frontend.pid
+.k8s-log-explorer.pid
+
 # Temporary files
 tmp/
 temp/

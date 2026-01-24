@@ -16,6 +16,7 @@ A lightweight, local web application for exploring Kubernetes logs across multip
   - [Windows Installation Guide](#windows-installation-guide)
 - [Running in Production Mode](#running-in-production-mode)
 - [Stopping the Application](#stopping-the-application)
+- [Quick Start Scripts](#quick-start-scripts)
 - [Usage Guide](#usage-guide)
   - [Basic Workflow](#basic-workflow)
   - [Viewing Logs](#viewing-logs)
@@ -578,9 +579,97 @@ npm run preview
 
 ## Stopping the Application
 
+### Manual Stop
+
 1. **Stop frontend:** Press `Ctrl+C` in the frontend terminal
 2. **Stop backend:** Press `Ctrl+C` in the backend terminal
 3. **Clean up:** The database (`backend/logs.db`) persists between runs
+
+### Using Stop Scripts
+
+**macOS/Linux:**
+```bash
+./stop.sh
+```
+
+**Windows:**
+```powershell
+.\stop.ps1
+```
+
+## Quick Start Scripts
+
+For convenience, startup and shutdown scripts are provided to quickly start and stop all services.
+
+### macOS/Linux
+
+**Start all services:**
+```bash
+./start.sh
+```
+
+**Stop all services:**
+```bash
+./stop.sh
+```
+
+**What the scripts do:**
+- `start.sh`: 
+  - Checks prerequisites (Python, Node.js, kubectl)
+  - Starts backend server in background
+  - Starts frontend server in background
+  - Saves process IDs for clean shutdown
+  - Logs are written to `logs/backend.log` and `logs/frontend.log`
+
+- `stop.sh`:
+  - Gracefully stops both services
+  - Cleans up PID files
+  - Optionally kills processes on ports 8000/5173 if still running
+
+**View logs:**
+```bash
+# Backend logs
+tail -f logs/backend.log
+
+# Frontend logs
+tail -f logs/frontend.log
+```
+
+### Windows
+
+**Start all services:**
+```powershell
+.\start.ps1
+```
+
+**Stop all services:**
+```powershell
+.\stop.ps1
+```
+
+**What the scripts do:**
+- `start.ps1`: 
+  - Checks prerequisites (Python, Node.js, kubectl)
+  - Starts backend server in background
+  - Starts frontend server in background
+  - Saves process IDs for clean shutdown
+  - Logs are written to `logs\backend.log` and `logs\frontend.log`
+
+- `stop.ps1`:
+  - Gracefully stops both services
+  - Cleans up PID files
+  - Optionally kills processes on ports 8000/5173 if still running
+
+**View logs:**
+```powershell
+# Backend logs (live)
+Get-Content logs\backend.log -Wait
+
+# Frontend logs (live)
+Get-Content logs\frontend.log -Wait
+```
+
+**Note:** The scripts create a `logs/` directory automatically. PID files (`.backend.pid`, `.frontend.pid`) are stored in the project root for process management.
 
 ## Usage Guide
 
