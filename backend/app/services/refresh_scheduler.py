@@ -78,7 +78,6 @@ class RefreshScheduler:
         """Refresh logs for a subscribed service."""
         if not self._running:
             return {"success": False, "error": "Scheduler stopped"}
-        """Refresh logs for a single service."""
         try:
             result = await collect_logs(
                 env=sub["env"],
