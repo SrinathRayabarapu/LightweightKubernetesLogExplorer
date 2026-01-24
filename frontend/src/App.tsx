@@ -349,6 +349,7 @@ export default function App() {
             isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
             filteredCount={filteredCount}
             filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
+            searchQuery={activeSearch}
             onLoadMore={handleLoadMore}
             onTimeNavigate={handleTimeNavigate}
           />

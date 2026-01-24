@@ -2,7 +2,7 @@
  * Log table component displaying log entries.
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
 
@@ -13,11 +13,12 @@ interface LogTableProps {
   isLoading: boolean;
   filteredCount?: number; // Number of logs excluded by filters
   filterPatterns?: string[]; // Patterns used for filtering
+  searchQuery?: string; // Current search query for highlighting matches
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
 }
 
-export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
@@ -383,6 +384,48 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
     }
   };
 
+  /**
+   * Highlight search matches in text.
+   * Returns JSX elements with highlighted spans for matches.
+   */
+  const highlightSearchMatches = useMemo(() => {
+    if (!searchQuery || searchQuery.trim().length === 0) {
+      return (text: string) => text;
+    }
+
+    const query = searchQuery.trim();
+    // Escape special regex characters in the search query
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+
+    return (text: string): React.ReactNode => {
+      const parts = text.split(regex);
+      if (parts.length === 1) {
+        return text; // No matches found
+      }
+
+      return parts.map((part, index) => {
+        if (part.toLowerCase() === query.toLowerCase()) {
+          return (
+            <mark
+              key={index}
+              style={{
+                backgroundColor: '#ffeb3b',
+                color: '#000',
+                padding: '1px 2px',
+                borderRadius: '2px',
+                fontWeight: 600,
+              }}
+            >
+              {part}
+            </mark>
+          );
+        }
+        return part;
+      });
+    };
+  }, [searchQuery]);
+
   if (isLoading && logs.length === 0) {
     return (
       <div style={styles.loading}>
@@ -496,7 +539,7 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
                   <td style={styles.tdMessage}>
                     <div style={styles.messageWrapper}>
                       <div style={styles.messageContainer}>
-                        <pre style={getMessageStyle(severity)}>{formatJsonInMessage(log.message)}</pre>
+                        <pre style={getMessageStyle(severity)}>{highlightSearchMatches(formatJsonInMessage(log.message))}</pre>
                       </div>
                       <button
                         onClick={() => handleCopyLog(log)}
