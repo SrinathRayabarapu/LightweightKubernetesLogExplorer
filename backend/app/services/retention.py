@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from ..config import settings
-from ..database import get_db_path, fetch_one, execute, commit, get_database
+from ..database import get_db_path, fetch_one, fetch_all, execute, commit
 
 
 async def get_db_size_mb() -> float:
@@ -23,12 +23,10 @@ async def get_log_count() -> int:
 
 async def get_oldest_logs(limit: int) -> list[int]:
     """Get IDs of the oldest logs."""
-    db = await get_database()
-    cursor = await db.execute(
+    rows = await fetch_all(
         "SELECT id FROM logs ORDER BY timestamp ASC LIMIT ?",
         (limit,)
     )
-    rows = await cursor.fetchall()
     return [row["id"] for row in rows]
 
 
@@ -52,19 +50,19 @@ async def delete_logs_by_ids(log_ids: list[int]) -> int:
     )
     
     # Delete from logs (triggers will update FTS)
-    cursor = await execute(
+    await execute(
         f"DELETE FROM logs WHERE id IN ({placeholders})",
         tuple(log_ids)
     )
     
     await commit()
-    return cursor.rowcount
+    return len(log_ids)
 
 
 async def vacuum_database():
     """Run VACUUM to reclaim disk space."""
-    db = await get_database()
-    await db.execute("VACUUM")
+    # VACUUM is handled through the execute function which has proper locking
+    await execute("VACUUM")
 
 
 async def enforce_retention() -> dict:
@@ -111,7 +109,11 @@ async def enforce_retention() -> dict:
     deleted = await delete_logs_by_ids(oldest_ids)
     
     # Vacuum to reclaim space
-    await vacuum_database()
+    try:
+        await vacuum_database()
+    except Exception as e:
+        # VACUUM can fail if database is busy, but deletion succeeded
+        print(f"Warning: VACUUM failed (non-critical): {e}")
     
     new_size = await get_db_size_mb()
     

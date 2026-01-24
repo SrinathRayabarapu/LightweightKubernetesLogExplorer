@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from ..config import get_kubectl_context, settings
-from ..database import fetch_one, execute, execute_many, commit
+from ..database import fetch_one, execute, execute_with_result, commit
 from .kubectl import (
     get_service_selector,
     get_pods_by_selector,
@@ -278,8 +278,8 @@ async def store_logs(entries: list[dict]) -> int:
                     if existing:
                         continue
                     
-                    # Insert log entry
-                    cursor = await execute("""
+                    # Insert log entry and get the row ID
+                    _, lastrowid = await execute_with_result("""
                         INSERT INTO logs (timestamp, env, namespace, service, pod, container, message)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     """, (
@@ -295,7 +295,7 @@ async def store_logs(entries: list[dict]) -> int:
                     # Store hash for deduplication
                     await execute(
                         "INSERT INTO log_hashes (hash, log_id) VALUES (?, ?)",
-                        (entry["hash"], cursor.lastrowid)
+                        (entry["hash"], lastrowid)
                     )
                     
                     stored_count += 1
