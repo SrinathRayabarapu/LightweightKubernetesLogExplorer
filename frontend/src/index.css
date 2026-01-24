@@ -1,0 +1,142 @@
+/**
+ * Global styles for K8s Log Explorer
+ * Built on top of Bootstrap with custom enhancements
+ */
+
+/* Base font size - Bootstrap uses 16px as base, we keep it */
+:root {
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 20px;
+  
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+}
+
+/* Reset and base styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* Override Bootstrap's small default font sizes */
+.form-control, .form-select, .btn {
+  font-size: var(--font-size-base) !important;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(74, 158, 255, 0.3);
+}
+
+/* Monospace elements */
+code, pre, kbd, samp {
+  font-family: var(--font-family-mono);
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--accent-primary, #4a9eff);
+  outline-offset: 2px;
+}
+
+/* Button reset */
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Input and select base styles */
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Disable Bootstrap's box-shadow on focus */
+.form-control:focus, .form-select:focus, .btn:focus {
+  box-shadow: none !important;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Mark (search highlight) styling */
+mark {
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* Table improvements */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Pre and code improvements */
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

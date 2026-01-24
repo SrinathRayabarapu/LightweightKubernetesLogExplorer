@@ -55,31 +55,32 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
-    minHeight: '48px', // Ensure consistent height with other components
+    gap: '6px',
+    minHeight: '54px',
   },
   label: {
-    fontSize: '12px',
-    fontWeight: 500,
+    fontSize: '13px',
+    fontWeight: 600,
     color: '#888',
     textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
   select: {
-    padding: '8px 12px',
-    fontSize: '14px',
+    padding: '10px 14px',
+    fontSize: '15px',
     border: '1px solid #333',
-    borderRadius: '4px',
+    borderRadius: '6px',
     backgroundColor: '#2a2a40',
     color: '#eee',
     cursor: 'pointer',
-    minWidth: '140px',
+    minWidth: '160px',
   },
   prodSelect: {
     borderColor: '#ff6b6b',
     backgroundColor: '#3a2a2a',
   },
   error: {
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#ff6b6b',
   },
 };

@@ -58,29 +58,30 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
-    minHeight: '48px', // Ensure consistent height with other components
+    gap: '6px',
+    minHeight: '54px',
   },
   label: {
-    fontSize: '12px',
-    fontWeight: 500,
+    fontSize: '13px',
+    fontWeight: 600,
     color: '#888',
     textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
   selectWrapper: {
     display: 'flex',
     alignItems: 'center',
-    gap: '6px',
+    gap: '8px',
   },
   select: {
-    padding: '8px 12px',
-    fontSize: '14px',
+    padding: '10px 14px',
+    fontSize: '15px',
     border: '1px solid #333',
-    borderRadius: '4px',
+    borderRadius: '6px',
     backgroundColor: '#2a2a40',
     color: '#eee',
     cursor: 'pointer',
-    minWidth: '280px',
+    minWidth: '300px',
     flex: '1 1 auto',
   },
   selectDisabled: {
@@ -89,7 +90,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'not-allowed',
   },
   podInfoInline: {
-    fontSize: '11px',
+    fontSize: '13px',
     color: '#666',
     whiteSpace: 'nowrap',
   },
