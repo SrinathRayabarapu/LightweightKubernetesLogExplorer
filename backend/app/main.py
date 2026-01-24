@@ -15,7 +15,7 @@ from .services.refresh_scheduler import start_scheduler, stop_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
+    """Application lifespan manager with proper cleanup."""
     # Startup: Load environment configurations
     print("Loading environment configurations...")
     configs = load_env_configs()
@@ -29,12 +29,30 @@ async def lifespan(app: FastAPI):
     print("Starting refresh scheduler...")
     await start_scheduler()
     
-    yield
+    print("✅ Application started successfully")
     
-    # Shutdown: Stop scheduler and close database
-    print("Shutting down...")
-    await stop_scheduler()
-    await close_database()
+    try:
+        yield
+    finally:
+        # Shutdown: Stop scheduler and close database
+        # Use finally to ensure cleanup even on crashes
+        print("Shutting down...")
+        
+        # Stop scheduler first (it uses the database)
+        try:
+            await stop_scheduler()
+            print("Scheduler stopped")
+        except Exception as e:
+            print(f"Warning: Error stopping scheduler: {e}")
+        
+        # Then close database
+        try:
+            await close_database()
+            print("Database closed")
+        except Exception as e:
+            print(f"Warning: Error closing database: {e}")
+        
+        print("✅ Shutdown complete")
 
 
 app = FastAPI(

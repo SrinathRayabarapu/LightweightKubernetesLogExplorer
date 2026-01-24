@@ -139,15 +139,25 @@ class RefreshScheduler:
         print("Refresh scheduler started")
     
     async def stop(self):
-        """Stop the scheduler background task."""
+        """Stop the scheduler background task safely."""
         self._running = False
         if self._task:
             self._task.cancel()
             try:
-                await self._task
+                # Give the task time to clean up
+                await asyncio.wait_for(
+                    asyncio.shield(self._task),
+                    timeout=5.0
+                )
             except asyncio.CancelledError:
                 pass
-            self._task = None
+            except asyncio.TimeoutError:
+                print("Warning: Scheduler task did not stop in time")
+            except Exception as e:
+                print(f"Warning: Error stopping scheduler task: {e}")
+            finally:
+                self._task = None
+        self._subscriptions.clear()
         print("Refresh scheduler stopped")
 
 
