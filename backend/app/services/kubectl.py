@@ -38,20 +38,28 @@ async def run_kubectl(context: str, args: list[str], timeout: int = 30) -> str:
             stderr=asyncio.subprocess.PIPE,
         )
         
-        stdout, stderr = await asyncio.wait_for(
-            proc.communicate(),
-            timeout=timeout
-        )
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(),
+                timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            # Force kill the process and wait for it to terminate
+            try:
+                proc.kill()
+                await asyncio.wait_for(proc.wait(), timeout=5)
+            except asyncio.TimeoutError:
+                # Process didn't terminate, try force kill
+                proc.terminate()
+                await proc.wait()
+            raise KubectlError(f"kubectl command timed out after {timeout}s")
         
         if proc.returncode != 0:
-            error_msg = stderr.decode().strip() or f"kubectl exited with code {proc.returncode}"
-            raise KubectlError(error_msg, stderr.decode())
+            error_msg = stderr.decode().strip() if stderr else f"kubectl exited with code {proc.returncode}"
+            raise KubectlError(error_msg, stderr.decode() if stderr else "")
         
-        return stdout.decode()
+        return stdout.decode() if stdout else ""
     
-    except asyncio.TimeoutError:
-        proc.kill()
-        raise KubectlError(f"kubectl command timed out after {timeout}s")
     except FileNotFoundError:
         raise KubectlError("kubectl not found. Please install kubectl and ensure it's in PATH.")
 
@@ -155,7 +163,8 @@ async def get_pod_logs(
     pod: str,
     container: str,
     since_time: Optional[str] = None,
-    tail_lines: int = 1000
+    tail_lines: Optional[int] = None,
+    timeout: Optional[int] = None
 ) -> str:
     """
     Fetch logs from a specific container in a pod.
@@ -166,7 +175,8 @@ async def get_pod_logs(
         pod: Pod name
         container: Container name
         since_time: ISO timestamp to fetch logs from (e.g., "2024-01-15T10:00:00Z")
-        tail_lines: Number of lines to fetch if no since_time
+        tail_lines: Number of lines to fetch if no since_time (None means no limit)
+        timeout: Command timeout in seconds (defaults to 60 if not specified)
     
     Returns:
         Raw log output as string
@@ -181,11 +191,16 @@ async def get_pod_logs(
         # Format timestamp for kubectl compatibility
         formatted_time = format_timestamp_for_kubectl(since_time)
         args.extend(["--since-time", formatted_time])
-    else:
+        # When using --since-time, we can't limit lines, but timeout will protect us
+    elif tail_lines is not None:
         args.extend(["--tail", str(tail_lines)])
+    # If both are None, fetch all logs (with timeout protection)
+    
+    # Use provided timeout or default to 60 seconds
+    cmd_timeout = timeout if timeout is not None else 60
     
     try:
-        return await run_kubectl(context, args, timeout=60)
+        return await run_kubectl(context, args, timeout=cmd_timeout)
     except KubectlError as e:
         # Return empty string for common non-fatal errors
         if "is waiting to start" in str(e) or "ContainerCreating" in str(e):
