@@ -293,21 +293,18 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
       case 'error':
         return {
           ...baseStyle,
-          fontSize: '16px', // +2 from base 14px for better visibility
           color: theme.colors.error,
           fontWeight: 600,
         };
       case 'exception':
         return {
           ...baseStyle,
-          fontSize: '16px', // +2 from base 14px for better visibility
           color: theme.colors.exception,
           fontWeight: 600,
         };
       case 'warning':
         return {
           ...baseStyle,
-          fontSize: '16px', // +2 from base 14px for better visibility
           color: theme.colors.warning,
           fontWeight: 600,
         };
