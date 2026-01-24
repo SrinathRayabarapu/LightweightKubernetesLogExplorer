@@ -55,8 +55,9 @@ export default function App() {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('logs');
 
-  // Pagination - default 500 logs per page (matches backend batch size)
-  const [limit] = useState(500);
+  // Pagination - default 1000 logs per page
+  // All logs are fetched from K8s and stored, UI displays in batches
+  const [limit] = useState(1000);
   const [offset, setOffset] = useState(0);
 
   // Auto-refresh state
@@ -167,16 +168,10 @@ export default function App() {
     setOffset(0);
   }, []);
 
-  // Manual refresh handler
+  // Manual refresh handler - fetches ALL available logs
   const handleManualRefresh = useCallback(() => {
     if (selectedEnv && namespace && service && selectedPod) {
-      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod });
-    }
-  }, [selectedEnv, namespace, service, selectedPod, fetchLogsMutation]);
-
-  // Fetch ALL logs handler (no tail limit)
-  const handleFetchAllLogs = useCallback(() => {
-    if (selectedEnv && namespace && service && selectedPod) {
+      // Always fetch ALL logs (no tail limit) to ensure complete log history
       fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
     }
   }, [selectedEnv, namespace, service, selectedPod, fetchLogsMutation]);
@@ -186,10 +181,13 @@ export default function App() {
     setOffset(prev => prev + limit);
   }, [limit]);
 
-  // Auto-fetch logs when pod is selected
+  // Auto-fetch ALL logs when pod is selected
+  // This fetches complete log history from K8s and stores in database
+  // UI displays first batch, "Load More" shows subsequent batches from stored data
   useEffect(() => {
     if (selectedEnv && namespace && service && selectedPod) {
-      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod });
+      // Fetch ALL logs (no tail limit) to get complete log history
+      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPod]); // Only trigger when pod changes
@@ -208,12 +206,13 @@ export default function App() {
     }
   }, [selectedPod, searchQuery, activeSearch, viewMode]);
 
-  // Auto-refresh effect
+  // Auto-refresh effect - fetches ALL logs on each interval
   useEffect(() => {
     if (!autoRefreshEnabled || !selectedEnv || !namespace || !service || !selectedPod) return;
 
     const intervalId = setInterval(() => {
-      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod });
+      // Always fetch ALL logs to ensure complete history
+      fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
     }, refreshInterval * 1000);
 
     return () => clearInterval(intervalId);
@@ -327,7 +326,6 @@ export default function App() {
             autoRefreshEnabled={autoRefreshEnabled}
             refreshInterval={refreshInterval}
             onManualRefresh={handleManualRefresh}
-            onFetchAllLogs={handleFetchAllLogs}
             onToggleAutoRefresh={setAutoRefreshEnabled}
             onIntervalChange={setRefreshInterval}
           />

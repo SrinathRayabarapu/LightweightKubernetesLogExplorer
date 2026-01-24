@@ -10,7 +10,6 @@ interface RefreshIndicatorProps {
   autoRefreshEnabled: boolean;
   refreshInterval: number; // in seconds
   onManualRefresh: () => void;
-  onFetchAllLogs?: () => void; // Optional: fetch all logs without tail limit
   onToggleAutoRefresh: (enabled: boolean) => void;
   onIntervalChange: (seconds: number) => void;
 }
@@ -20,7 +19,6 @@ export function RefreshIndicator({
   autoRefreshEnabled,
   refreshInterval,
   onManualRefresh,
-  onFetchAllLogs,
   onToggleAutoRefresh,
   onIntervalChange,
 }: RefreshIndicatorProps) {
@@ -181,32 +179,6 @@ export function RefreshIndicator({
                 </button>
               ))}
             </div>
-            
-            {onFetchAllLogs && (
-              <>
-                <div style={{ ...styles.settingsLabel, marginTop: '14px', borderTop: `1px solid ${theme.colors.borderPrimary}`, paddingTop: '14px' }}>
-                  Fetch more logs:
-                </div>
-                <button
-                  onClick={() => {
-                    onFetchAllLogs();
-                    setShowSettings(false);
-                  }}
-                  disabled={isRefreshing}
-                  style={{
-                    ...styles.intervalButton,
-                    width: '100%',
-                    backgroundColor: theme.colors.accentSecondary,
-                    color: '#fff',
-                    borderColor: theme.colors.accentSecondary,
-                    opacity: isRefreshing ? 0.7 : 1,
-                  }}
-                  title="Fetch ALL available logs (may take longer)"
-                >
-                  {isRefreshing ? '⟳ Fetching...' : '📥 Fetch All Logs'}
-                </button>
-              </>
-            )}
           </div>
         )}
       </div>
