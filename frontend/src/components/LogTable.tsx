@@ -278,21 +278,21 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, o
       case 'error':
         return {
           ...baseStyle,
-          fontSize: '14px', // +2 from base 12px for better visibility
+          fontSize: '15px', // +2 from base 13px for better visibility
           color: '#ff6b6b',
           fontWeight: 500,
         };
       case 'exception':
         return {
           ...baseStyle,
-          fontSize: '14px', // +2 from base 12px for better visibility
+          fontSize: '15px', // +2 from base 13px for better visibility
           color: '#ff6b9d',
           fontWeight: 500,
         };
       case 'warning':
         return {
           ...baseStyle,
-          fontSize: '14px', // +2 from base 12px for better visibility
+          fontSize: '15px', // +2 from base 13px for better visibility
           color: '#ffaa00',
           fontWeight: 500,
         };
@@ -523,7 +523,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   timestamp: {
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#6cb6ff',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
@@ -540,13 +540,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   podName: {
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#e0e0e0',
     wordBreak: 'break-all',
   },
   containerName: {
     fontFamily: 'monospace',
-    fontSize: '11px',
+    fontSize: '12px',
     color: '#888',
   },
   tdMessage: {
@@ -570,7 +570,7 @@ const styles: Record<string, React.CSSProperties> = {
   message: {
     margin: 0,
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     color: '#e0e0e0',
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
