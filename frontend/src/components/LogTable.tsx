@@ -534,8 +534,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
           {showHeaders && (
             <thead>
               <tr>
-                <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
-                <th style={{ ...styles.th, width: '180px' }}>Pod</th>
+                <th style={{ ...styles.th, width: '175px', minWidth: '175px', maxWidth: '175px' }}>Timestamp</th>
+                <th style={{ ...styles.th, width: '250px', minWidth: '250px', maxWidth: '250px' }}>Pod</th>
                 <th style={styles.th}>Message</th>
               </tr>
             </thead>
@@ -721,6 +721,7 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     },
     table: {
       width: '100%',
+      tableLayout: 'fixed' as const,
       borderCollapse: 'collapse' as const,
       fontSize: '14px',
     },
@@ -744,6 +745,9 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     tdTimestamp: {
       padding: '10px 16px',
       verticalAlign: 'top' as const,
+      width: '175px',
+      minWidth: '175px',
+      maxWidth: '175px',
     },
     timestamp: {
       fontFamily: 'var(--font-family-mono, monospace)',
@@ -761,12 +765,16 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     tdPod: {
       padding: '10px 16px',
       verticalAlign: 'top' as const,
+      width: '250px',
+      minWidth: '250px',
+      maxWidth: '250px',
     },
     podName: {
       fontFamily: 'var(--font-family-mono, monospace)',
       fontSize: '14px',
       color: colors.podName,
-      wordBreak: 'break-all' as const,
+      wordBreak: 'break-word' as const,
+      overflowWrap: 'break-word' as const,
     },
     containerName: {
       fontFamily: 'var(--font-family-mono, monospace)',
