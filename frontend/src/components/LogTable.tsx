@@ -323,6 +323,17 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   }, [showFilterTooltip]);
 
   /**
+   * Cleanup timeout on unmount.
+   */
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /**
    * Handle showing tooltip with delay prevention.
    */
   const handleShowTooltip = () => {
