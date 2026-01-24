@@ -2,7 +2,7 @@
  * Refresh indicator and auto-refresh control component.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 interface RefreshIndicatorProps {
@@ -24,6 +24,24 @@ export function RefreshIndicator({
 }: RefreshIndicatorProps) {
   const { theme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+
+    if (showSettings) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSettings]);
 
   const intervalOptions = [
     { value: 10, label: '10s' },
@@ -65,6 +83,7 @@ export function RefreshIndicator({
       alignItems: 'center',
       gap: '6px',
       position: 'relative' as const,
+      zIndex: 10002, // Higher than LogTable elements (10000-10001)
     },
     checkbox: {
       display: 'flex',
@@ -92,7 +111,7 @@ export function RefreshIndicator({
       backgroundColor: theme.colors.bgTertiary,
       border: `1px solid ${theme.colors.borderSecondary}`,
       borderRadius: '6px',
-      zIndex: 100,
+      zIndex: 10002, // Higher than LogTable elements (10000-10001)
       minWidth: '160px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
     },
@@ -143,7 +162,7 @@ export function RefreshIndicator({
         )} Refresh
       </button>
 
-      <div style={styles.autoRefresh}>
+      <div ref={containerRef} style={styles.autoRefresh}>
         <label style={styles.checkbox}>
           <input
             type="checkbox"
