@@ -26,9 +26,11 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const [showHeaders, setShowHeaders] = useState(true);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
 
   // Dynamic styles based on current theme
   const styles = getThemedStyles(theme.colors);
@@ -340,6 +342,28 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   }, []);
 
   /**
+   * Handle scroll events to show/hide headers.
+   * Headers are visible only when scrolled to the top.
+   */
+  useEffect(() => {
+    const tableWrapper = tableWrapperRef.current;
+    if (!tableWrapper) return;
+
+    const handleScroll = () => {
+      const isAtTop = tableWrapper.scrollTop === 0;
+      setShowHeaders(isAtTop);
+    };
+
+    tableWrapper.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
+
+    return () => {
+      tableWrapper.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  /**
    * Handle showing tooltip with delay prevention.
    */
   const handleShowTooltip = () => {
@@ -505,15 +529,17 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
         )}
       </div>
 
-      <div style={styles.tableWrapper}>
+      <div ref={tableWrapperRef} style={styles.tableWrapper}>
         <table style={styles.table}>
-          <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-            <tr>
-              <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
-              <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
-              <th style={styles.th}>Message</th>
-            </tr>
-          </thead>
+          {showHeaders && (
+            <thead>
+              <tr>
+                <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
+                <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
+                <th style={styles.th}>Message</th>
+              </tr>
+            </thead>
+          )}
           <tbody>
             {logs.map(log => {
               const severity = getLogSeverity(log.message);
@@ -709,10 +735,6 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       color: colors.textMuted,
       backgroundColor: colors.bgSecondary,
       borderBottom: `1px solid ${colors.borderPrimary}`,
-      position: 'sticky' as const,
-      top: 0,
-      zIndex: 10,
-      boxShadow: `0 2px 2px -1px ${colors.borderPrimary}`,
     },
     tr: {
       borderBottom: `1px solid ${colors.borderPrimary}`,
