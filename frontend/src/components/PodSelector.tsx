@@ -3,6 +3,7 @@
  */
 
 import { PodInfo } from '../api/client';
+import { useTheme } from '../context/ThemeContext';
 
 interface PodSelectorProps {
   pods: PodInfo[];
@@ -19,9 +20,52 @@ export function PodSelector({
   disabled = false,
   isLoading = false,
 }: PodSelectorProps) {
+  const { theme } = useTheme();
   const selectedPod = pods.find(p => p.name === value);
   const containerCount = selectedPod?.containers.length || 0;
   
+  const styles = {
+    container: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
+      minHeight: '54px',
+    },
+    label: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+    },
+    selectWrapper: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+    },
+    select: {
+      padding: '10px 14px',
+      fontSize: '15px',
+      border: `1px solid ${theme.colors.inputBorder}`,
+      borderRadius: '6px',
+      backgroundColor: theme.colors.inputBg,
+      color: theme.colors.inputText,
+      cursor: 'pointer',
+      minWidth: '300px',
+      flex: '1 1 auto',
+    },
+    selectDisabled: {
+      backgroundColor: theme.colors.bgPrimary,
+      color: theme.colors.textMuted,
+      cursor: 'not-allowed',
+    },
+    podInfoInline: {
+      fontSize: '13px',
+      color: theme.colors.textMuted,
+      whiteSpace: 'nowrap' as const,
+    },
+  };
+
   return (
     <div style={styles.container}>
       <label style={styles.label}>Pod</label>
@@ -53,44 +97,3 @@ export function PodSelector({
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    minHeight: '48px', // Ensure consistent height with other components
-  },
-  label: {
-    fontSize: '12px',
-    fontWeight: 500,
-    color: '#888',
-    textTransform: 'uppercase',
-  },
-  selectWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  select: {
-    padding: '8px 12px',
-    fontSize: '14px',
-    border: '1px solid #333',
-    borderRadius: '4px',
-    backgroundColor: '#2a2a40',
-    color: '#eee',
-    cursor: 'pointer',
-    minWidth: '280px',
-    flex: '1 1 auto',
-  },
-  selectDisabled: {
-    backgroundColor: '#1a1a2e',
-    color: '#666',
-    cursor: 'not-allowed',
-  },
-  podInfoInline: {
-    fontSize: '11px',
-    color: '#666',
-    whiteSpace: 'nowrap',
-  },
-};

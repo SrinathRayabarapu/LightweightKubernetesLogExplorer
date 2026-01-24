@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
+import { useTheme } from '../context/ThemeContext';
 
 interface LogTableProps {
   logs: LogEntry[];
@@ -19,14 +20,20 @@ interface LogTableProps {
 }
 
 export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+  const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
   const [hoveredCopyButton, setHoveredCopyButton] = useState<number | null>(null);
   const [showFilterTooltip, setShowFilterTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const [showHeaders, setShowHeaders] = useState(true);
   const filterContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic styles based on current theme
+  const styles = getThemedStyles(theme.colors);
 
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts);
@@ -279,29 +286,29 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
    * Get style for log message based on severity.
    */
   const getMessageStyle = (severity: 'error' | 'warning' | 'exception' | null): React.CSSProperties => {
-    const baseStyle = styles.message;
+    const baseStyle = {
+      ...styles.message,
+      color: theme.colors.textPrimary,
+    };
     
     switch (severity) {
       case 'error':
         return {
           ...baseStyle,
-          fontSize: '15px', // +2 from base 13px for better visibility
-          color: '#ff6b6b',
-          fontWeight: 500,
+          color: theme.colors.error,
+          fontWeight: 600,
         };
       case 'exception':
         return {
           ...baseStyle,
-          fontSize: '15px', // +2 from base 13px for better visibility
-          color: '#ff6b9d',
-          fontWeight: 500,
+          color: theme.colors.exception,
+          fontWeight: 600,
         };
       case 'warning':
         return {
           ...baseStyle,
-          fontSize: '15px', // +2 from base 13px for better visibility
-          color: '#ffaa00',
-          fontWeight: 500,
+          color: theme.colors.warning,
+          fontWeight: 600,
         };
       default:
         return baseStyle;
@@ -335,6 +342,28 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   }, []);
 
   /**
+   * Handle scroll events to show/hide headers.
+   * Headers are visible only when scrolled to the top.
+   */
+  useEffect(() => {
+    const tableWrapper = tableWrapperRef.current;
+    if (!tableWrapper) return;
+
+    const handleScroll = () => {
+      const isAtTop = tableWrapper.scrollTop === 0;
+      setShowHeaders(isAtTop);
+    };
+
+    tableWrapper.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
+
+    return () => {
+      tableWrapper.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  /**
    * Handle showing tooltip with delay prevention.
    */
   const handleShowTooltip = () => {
@@ -358,26 +387,30 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
    * Get row style based on severity for subtle background highlighting.
    */
   const getRowStyle = (severity: 'error' | 'warning' | 'exception' | null, isExpanded: boolean): React.CSSProperties => {
-    const baseStyle = isExpanded ? styles.expandedRow : styles.tr;
+    const baseStyle = {
+      ...(isExpanded ? styles.expandedRow : styles.tr),
+      borderBottomColor: theme.colors.borderPrimary,
+      backgroundColor: isExpanded ? theme.colors.bgSelected : 'transparent',
+    };
     
     switch (severity) {
       case 'error':
         return {
           ...baseStyle,
-          backgroundColor: isExpanded ? '#3a2525' : '#2a1f1f',
-          borderLeft: '3px solid #ff6b6b',
+          backgroundColor: theme.colors.errorBg,
+          borderLeft: `3px solid ${theme.colors.error}`,
         };
       case 'exception':
         return {
           ...baseStyle,
-          backgroundColor: isExpanded ? '#3a2528' : '#2a1f22',
-          borderLeft: '3px solid #ff6b9d',
+          backgroundColor: theme.colors.exceptionBg,
+          borderLeft: `3px solid ${theme.colors.exception}`,
         };
       case 'warning':
         return {
           ...baseStyle,
-          backgroundColor: isExpanded ? '#3a2f1f' : '#2a241f',
-          borderLeft: '3px solid #ffaa00',
+          backgroundColor: theme.colors.warningBg,
+          borderLeft: `3px solid ${theme.colors.warning}`,
         };
       default:
         return baseStyle;
@@ -410,8 +443,8 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
             <mark
               key={index}
               style={{
-                backgroundColor: '#ffeb3b',
-                color: '#000',
+                backgroundColor: theme.colors.searchHighlight,
+                color: theme.colors.searchHighlightText,
                 padding: '1px 2px',
                 borderRadius: '2px',
                 fontWeight: 600,
@@ -496,15 +529,17 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
         )}
       </div>
 
-      <div style={styles.tableWrapper}>
+      <div ref={tableWrapperRef} style={styles.tableWrapper}>
         <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
-              <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
-              <th style={styles.th}>Message</th>
-            </tr>
-          </thead>
+          {showHeaders && (
+            <thead>
+              <tr>
+                <th style={{ ...styles.th, width: '175px' }}>Timestamp</th>
+                <th style={{ ...styles.th, width: '180px' }}>Pod / Container</th>
+                <th style={styles.th}>Message</th>
+              </tr>
+            </thead>
+          )}
           <tbody>
             {logs.map(log => {
               const severity = getLogSeverity(log.message);
@@ -578,251 +613,259 @@ export function LogTable({ logs, total, hasMore, isLoading, filteredCount = 0, f
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    overflow: 'hidden',
-  },
-  header: {
-    padding: '12px 16px',
-    borderBottom: '1px solid #333',
-    backgroundColor: '#1a1a2e',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    position: 'relative',
-    zIndex: 100,
-    overflow: 'visible',
-  },
-  countContainer: {
-    display: 'flex',
-    alignItems: 'baseline',
-    gap: '6px',
-  },
-  countNumber: {
-    fontSize: '20px',
-    fontWeight: 600,
-    color: '#4a9eff',
-  },
-  countLabel: {
-    fontSize: '14px',
-    color: '#aaa',
-  },
-  countSubtext: {
-    fontSize: '12px',
-    color: '#666',
-  },
-  filteredCountContainer: {
-    position: 'relative',
-    display: 'inline-block',
-    zIndex: 10000,
-  },
-  filteredCount: {
-    fontSize: '12px',
-    color: '#888',
-    fontStyle: 'italic',
-    cursor: 'help',
-  },
-  filterTooltip: {
-    position: 'fixed',
-    backgroundColor: '#1a1a2e',
-    border: '1px solid #444',
-    borderRadius: '6px',
-    padding: '10px',
-    minWidth: '220px',
-    maxWidth: '320px',
-    maxHeight: '220px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
-    zIndex: 10001,
-    pointerEvents: 'auto',
-    cursor: 'default',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  filterTooltipTitle: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#4a9eff',
-    marginBottom: '8px',
-    borderBottom: '1px solid #333',
-    paddingBottom: '6px',
-    flexShrink: 0,
-  },
-  filterTooltipList: {
-    margin: 0,
-    padding: 0,
-    listStyle: 'none',
-    maxHeight: '170px',
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    flex: 1,
-    paddingRight: '6px',
-    // Custom scrollbar styling for better visibility
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#444 #1a1a2e',
-  },
-  filterTooltipItem: {
-    fontSize: '12px',
-    color: '#ccc',
-    marginBottom: '6px',
-    paddingLeft: '8px',
-    lineHeight: '1.4',
-  },
-  filterTooltipCode: {
-    fontFamily: 'monospace',
-    backgroundColor: '#252540',
-    padding: '4px 6px',
-    borderRadius: '3px',
-    color: '#e0e0e0',
-    fontSize: '11px',
-  },
-  tableWrapper: {
-    flex: 1,
-    overflow: 'auto',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '13px',
-  },
-  th: {
-    padding: '10px 12px',
-    textAlign: 'left',
-    fontWeight: 500,
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    color: '#888',
-    backgroundColor: '#1f1f35',
-    borderBottom: '1px solid #333',
-    position: 'sticky',
-    top: 0,
-  },
-  tr: {
-    borderBottom: '1px solid #2a2a40',
-  },
-  expandedRow: {
-    backgroundColor: '#252540',
-  },
-  tdTimestamp: {
-    padding: '8px 12px',
-    verticalAlign: 'top',
-  },
-  timestamp: {
-    fontFamily: 'monospace',
-    fontSize: '13px',
-    color: '#6cb6ff',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
-  timestampSelected: {
-    backgroundColor: '#3a3a5a',
-    borderRadius: '3px',
-    padding: '2px 4px',
-    margin: '-2px -4px',
-  },
-  tdPod: {
-    padding: '8px 12px',
-    verticalAlign: 'top',
-  },
-  podName: {
-    fontFamily: 'monospace',
-    fontSize: '13px',
-    color: '#e0e0e0',
-    wordBreak: 'break-all',
-  },
-  containerName: {
-    fontFamily: 'monospace',
-    fontSize: '12px',
-    color: '#888',
-  },
-  tdMessage: {
-    padding: '8px 12px',
-    verticalAlign: 'top',
-  },
-  messageWrapper: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '8px',
-  },
-  messageContainer: {
-    flex: 1,
-    maxHeight: '300px',
-    overflow: 'auto',
-    backgroundColor: '#1a1a2e',
-    borderRadius: '4px',
-    padding: '4px 8px',
-  },
-  message: {
-    margin: 0,
-    fontFamily: 'monospace',
-    fontSize: '13px',
-    color: '#e0e0e0',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  },
-  copyButton: {
-    background: '#3a3a5a',
-    border: '1px solid #555',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    padding: '4px 8px',
-    color: '#ccc',
-    transition: 'all 0.2s',
-    flexShrink: 0,
-    alignSelf: 'flex-start',
-    whiteSpace: 'nowrap',
-  },
-  copyButtonHovered: {
-    background: '#4a4a6a',
-    color: '#fff',
-    borderColor: '#666',
-  },
-  loading: {
-    padding: '40px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    color: '#888',
-  },
-  empty: {
-    padding: '40px',
-    textAlign: 'center',
-    color: '#666',
-  },
-  loadMore: {
-    padding: '12px',
-    textAlign: 'center',
-    borderTop: '1px solid #333',
-  },
-  loadMoreButton: {
-    padding: '8px 24px',
-    fontSize: '13px',
-    border: '1px solid #444',
-    borderRadius: '4px',
-    backgroundColor: '#2a2a40',
-    color: '#eee',
-    cursor: 'pointer',
-  },
-  loadingIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    marginLeft: 'auto',
-    fontSize: '12px',
-    color: '#4a9eff',
-  },
-  spinner: {
-    display: 'inline-block',
-    animation: 'spin 1s linear infinite',
-    fontSize: '14px',
-  },
-  loadingText: {
-    color: '#888',
-  },
-};
+/**
+ * Generate themed styles for LogTable component.
+ */
+function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
+  return {
+    container: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      height: '100%',
+      overflow: 'hidden',
+    },
+    header: {
+      padding: '14px 20px',
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+      backgroundColor: colors.bgPrimary,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '14px',
+      position: 'relative' as const,
+      zIndex: 100,
+      overflow: 'visible' as const,
+    },
+    countContainer: {
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: '8px',
+    },
+    countNumber: {
+      fontSize: '24px',
+      fontWeight: 600,
+      color: colors.accentPrimary,
+    },
+    countLabel: {
+      fontSize: '16px',
+      color: colors.textSecondary,
+    },
+    countSubtext: {
+      fontSize: '14px',
+      color: colors.textMuted,
+    },
+    filteredCountContainer: {
+      position: 'relative' as const,
+      display: 'inline-block',
+      zIndex: 10000,
+    },
+    filteredCount: {
+      fontSize: '14px',
+      color: colors.textMuted,
+      fontStyle: 'italic' as const,
+      cursor: 'help',
+    },
+    filterTooltip: {
+      position: 'fixed' as const,
+      backgroundColor: colors.bgTertiary,
+      border: `1px solid ${colors.borderSecondary}`,
+      borderRadius: '8px',
+      padding: '14px',
+      minWidth: '260px',
+      maxWidth: '360px',
+      maxHeight: '260px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
+      zIndex: 10001,
+      pointerEvents: 'auto' as const,
+      cursor: 'default',
+      display: 'flex',
+      flexDirection: 'column' as const,
+    },
+    filterTooltipTitle: {
+      fontSize: '15px',
+      fontWeight: 600,
+      color: colors.accentPrimary,
+      marginBottom: '10px',
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+      paddingBottom: '8px',
+      flexShrink: 0,
+    },
+    filterTooltipList: {
+      margin: 0,
+      padding: 0,
+      listStyle: 'none' as const,
+      maxHeight: '200px',
+      overflowY: 'auto' as const,
+      overflowX: 'hidden' as const,
+      flex: 1,
+      paddingRight: '8px',
+      scrollbarWidth: 'thin' as const,
+      scrollbarColor: `${colors.borderSecondary} ${colors.bgPrimary}`,
+    },
+    filterTooltipItem: {
+      fontSize: '14px',
+      color: colors.textSecondary,
+      marginBottom: '8px',
+      paddingLeft: '10px',
+      lineHeight: '1.5',
+    },
+    filterTooltipCode: {
+      fontFamily: 'var(--font-family-mono, monospace)',
+      backgroundColor: colors.bgHover,
+      padding: '5px 8px',
+      borderRadius: '4px',
+      color: colors.textPrimary,
+      fontSize: '13px',
+    },
+    tableWrapper: {
+      flex: 1,
+      overflow: 'auto' as const,
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse' as const,
+      fontSize: '14px',
+    },
+    th: {
+      padding: '12px 16px',
+      textAlign: 'left' as const,
+      fontWeight: 600,
+      fontSize: '13px',
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+      color: colors.textMuted,
+      backgroundColor: colors.bgSecondary,
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+    },
+    tr: {
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+    },
+    expandedRow: {
+      backgroundColor: colors.bgHover,
+    },
+    tdTimestamp: {
+      padding: '10px 16px',
+      verticalAlign: 'top' as const,
+    },
+    timestamp: {
+      fontFamily: 'var(--font-family-mono, monospace)',
+      fontSize: '14px',
+      color: colors.timestamp,
+      cursor: 'pointer',
+      whiteSpace: 'nowrap' as const,
+    },
+    timestampSelected: {
+      backgroundColor: colors.bgSelected,
+      borderRadius: '4px',
+      padding: '3px 6px',
+      margin: '-3px -6px',
+    },
+    tdPod: {
+      padding: '10px 16px',
+      verticalAlign: 'top' as const,
+    },
+    podName: {
+      fontFamily: 'var(--font-family-mono, monospace)',
+      fontSize: '14px',
+      color: colors.podName,
+      wordBreak: 'break-all' as const,
+    },
+    containerName: {
+      fontFamily: 'var(--font-family-mono, monospace)',
+      fontSize: '13px',
+      color: colors.containerName,
+      marginTop: '2px',
+    },
+    tdMessage: {
+      padding: '10px 16px',
+      verticalAlign: 'top' as const,
+    },
+    messageWrapper: {
+      position: 'relative' as const,
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '10px',
+    },
+    messageContainer: {
+      flex: 1,
+      maxHeight: '300px',
+      overflow: 'auto' as const,
+      backgroundColor: colors.bgPrimary,
+      borderRadius: '6px',
+      padding: '8px 12px',
+    },
+    message: {
+      margin: 0,
+      fontFamily: 'var(--font-family-mono, monospace)',
+      fontSize: '14px',
+      color: colors.textPrimary,
+      whiteSpace: 'pre-wrap' as const,
+      wordBreak: 'break-word' as const,
+      lineHeight: '1.5',
+    },
+    copyButton: {
+      background: colors.buttonBg,
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '6px',
+      fontSize: '13px',
+      fontWeight: 500,
+      cursor: 'pointer',
+      padding: '6px 12px',
+      color: colors.buttonText,
+      transition: 'all 0.2s',
+      flexShrink: 0,
+      alignSelf: 'flex-start' as const,
+      whiteSpace: 'nowrap' as const,
+    },
+    copyButtonHovered: {
+      background: colors.buttonBgHover,
+      color: colors.textAccent,
+      borderColor: colors.borderSecondary,
+    },
+    loading: {
+      padding: '50px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+      color: colors.textMuted,
+      fontSize: '16px',
+    },
+    empty: {
+      padding: '50px',
+      textAlign: 'center' as const,
+      color: colors.textMuted,
+      fontSize: '16px',
+    },
+    loadMore: {
+      padding: '16px',
+      textAlign: 'center' as const,
+      borderTop: `1px solid ${colors.borderPrimary}`,
+    },
+    loadMoreButton: {
+      padding: '10px 28px',
+      fontSize: '15px',
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '6px',
+      backgroundColor: colors.buttonBg,
+      color: colors.textPrimary,
+      cursor: 'pointer',
+      fontWeight: 500,
+    },
+    loadingIndicator: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      marginLeft: 'auto',
+      fontSize: '14px',
+      color: colors.accentPrimary,
+    },
+    spinner: {
+      display: 'inline-block',
+      animation: 'spin 1s linear infinite',
+      fontSize: '16px',
+    },
+    loadingText: {
+      color: colors.textMuted,
+    },
+  };
+}

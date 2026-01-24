@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 interface RefreshIndicatorProps {
   isRefreshing: boolean;
@@ -21,6 +22,7 @@ export function RefreshIndicator({
   onToggleAutoRefresh,
   onIntervalChange,
 }: RefreshIndicatorProps) {
+  const { theme } = useTheme();
   const [showSettings, setShowSettings] = useState(false);
 
   const intervalOptions = [
@@ -29,6 +31,97 @@ export function RefreshIndicator({
     { value: 300, label: '5m' },
     { value: 600, label: '10m' },
   ];
+
+  const styles = {
+    container: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+    },
+    refreshButton: {
+      padding: '10px 14px',
+      fontSize: '14px',
+      border: `1px solid ${theme.colors.buttonBorder}`,
+      borderRadius: '6px',
+      backgroundColor: theme.colors.buttonBg,
+      color: theme.colors.buttonText,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+    },
+    refreshing: {
+      opacity: 0.7,
+      cursor: 'wait',
+    },
+    spinner: {
+      display: 'inline-block',
+      animation: 'spin 1s linear infinite',
+    },
+    autoRefresh: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      position: 'relative' as const,
+    },
+    checkbox: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '14px',
+      color: theme.colors.textSecondary,
+      cursor: 'pointer',
+    },
+    settingsButton: {
+      padding: '6px 10px',
+      fontSize: '16px',
+      border: 'none',
+      borderRadius: '4px',
+      backgroundColor: 'transparent',
+      color: theme.colors.textMuted,
+      cursor: 'pointer',
+    },
+    settingsPopup: {
+      position: 'absolute' as const,
+      top: '100%',
+      right: 0,
+      marginTop: '6px',
+      padding: '14px',
+      backgroundColor: theme.colors.bgTertiary,
+      border: `1px solid ${theme.colors.borderSecondary}`,
+      borderRadius: '6px',
+      zIndex: 100,
+      minWidth: '160px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    },
+    settingsLabel: {
+      fontSize: '13px',
+      color: theme.colors.textMuted,
+      marginBottom: '10px',
+    },
+    intervalButtons: {
+      display: 'flex',
+      gap: '6px',
+    },
+    intervalButton: {
+      padding: '6px 10px',
+      fontSize: '13px',
+      border: `1px solid ${theme.colors.buttonBorder}`,
+      borderRadius: '4px',
+      backgroundColor: theme.colors.bgPrimary,
+      color: theme.colors.textSecondary,
+      cursor: 'pointer',
+    },
+    intervalActive: {
+      backgroundColor: theme.colors.accentPrimary,
+      borderColor: theme.colors.accentPrimary,
+      color: '#fff',
+    },
+    intervalLabel: {
+      fontSize: '13px',
+      color: theme.colors.textMuted,
+    },
+  };
 
   return (
     <div style={styles.container}>
@@ -98,93 +191,3 @@ export function RefreshIndicator({
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  refreshButton: {
-    padding: '8px 12px',
-    fontSize: '13px',
-    border: '1px solid #444',
-    borderRadius: '4px',
-    backgroundColor: '#2a2a40',
-    color: '#eee',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  refreshing: {
-    opacity: 0.7,
-    cursor: 'wait',
-  },
-  spinner: {
-    display: 'inline-block',
-    animation: 'spin 1s linear infinite',
-  },
-  autoRefresh: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    position: 'relative',
-  },
-  checkbox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '13px',
-    color: '#aaa',
-    cursor: 'pointer',
-  },
-  settingsButton: {
-    padding: '4px 8px',
-    fontSize: '14px',
-    border: 'none',
-    borderRadius: '3px',
-    backgroundColor: 'transparent',
-    color: '#888',
-    cursor: 'pointer',
-  },
-  settingsPopup: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: '4px',
-    padding: '12px',
-    backgroundColor: '#2a2a40',
-    border: '1px solid #444',
-    borderRadius: '4px',
-    zIndex: 100,
-    minWidth: '150px',
-  },
-  settingsLabel: {
-    fontSize: '12px',
-    color: '#888',
-    marginBottom: '8px',
-  },
-  intervalButtons: {
-    display: 'flex',
-    gap: '4px',
-  },
-  intervalButton: {
-    padding: '4px 8px',
-    fontSize: '12px',
-    border: '1px solid #444',
-    borderRadius: '3px',
-    backgroundColor: '#1a1a2e',
-    color: '#aaa',
-    cursor: 'pointer',
-  },
-  intervalActive: {
-    backgroundColor: '#4a9eff',
-    borderColor: '#4a9eff',
-    color: '#fff',
-  },
-  intervalLabel: {
-    fontSize: '12px',
-    color: '#666',
-  },
-};

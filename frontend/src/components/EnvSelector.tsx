@@ -3,6 +3,7 @@
  */
 
 import { useEnvs } from '../hooks/useLogs';
+import { useTheme } from '../context/ThemeContext';
 import { EnvConfig } from '../api/client';
 
 interface EnvSelectorProps {
@@ -11,6 +12,7 @@ interface EnvSelectorProps {
 }
 
 export function EnvSelector({ value, onChange }: EnvSelectorProps) {
+  const { theme } = useTheme();
   const { data: envs, isLoading, error } = useEnvs();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -26,6 +28,40 @@ export function EnvSelector({ value, onChange }: EnvSelectorProps) {
     const orderB = order[b.envName.toLowerCase()] || 999;
     return orderA - orderB;
   }) : [];
+
+  const styles = {
+    container: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '6px',
+      minHeight: '54px',
+    },
+    label: {
+      fontSize: '13px',
+      fontWeight: 600,
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.5px',
+    },
+    select: {
+      padding: '10px 14px',
+      fontSize: '15px',
+      border: `1px solid ${theme.colors.inputBorder}`,
+      borderRadius: '6px',
+      backgroundColor: theme.colors.inputBg,
+      color: theme.colors.inputText,
+      cursor: 'pointer',
+      minWidth: '160px',
+    },
+    prodSelect: {
+      borderColor: theme.colors.error,
+      backgroundColor: theme.colors.errorBg,
+    },
+    error: {
+      fontSize: '13px',
+      color: theme.colors.error,
+    },
+  };
 
   return (
     <div style={styles.container}>
@@ -50,36 +86,3 @@ export function EnvSelector({ value, onChange }: EnvSelectorProps) {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    minHeight: '48px', // Ensure consistent height with other components
-  },
-  label: {
-    fontSize: '12px',
-    fontWeight: 500,
-    color: '#888',
-    textTransform: 'uppercase',
-  },
-  select: {
-    padding: '8px 12px',
-    fontSize: '14px',
-    border: '1px solid #333',
-    borderRadius: '4px',
-    backgroundColor: '#2a2a40',
-    color: '#eee',
-    cursor: 'pointer',
-    minWidth: '140px',
-  },
-  prodSelect: {
-    borderColor: '#ff6b6b',
-    backgroundColor: '#3a2a2a',
-  },
-  error: {
-    fontSize: '12px',
-    color: '#ff6b6b',
-  },
-};

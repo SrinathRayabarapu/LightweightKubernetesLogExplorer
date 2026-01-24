@@ -10,6 +10,8 @@ import { LogTable } from './components/LogTable';
 import { RefreshIndicator } from './components/RefreshIndicator';
 import { SearchableSelect } from './components/SearchableSelect';
 import { PodSelector } from './components/PodSelector';
+import { ThemeSelector } from './components/ThemeSelector';
+import { useTheme } from './context/ThemeContext';
 import {
   useLogs,
   useSearchLogs,
@@ -28,6 +30,9 @@ type ViewMode = 'logs' | 'search' | 'time-window';
 const FIXED_NAMESPACE = 'jio-t2r-ms';
 
 export default function App() {
+  // Theme
+  const { theme } = useTheme();
+
   // Selection state
   const [selectedEnv, setSelectedEnv] = useState('');
   const namespace = FIXED_NAMESPACE; // Fixed namespace - not user-selectable
@@ -220,13 +225,22 @@ export default function App() {
   const hasMore = currentQuery.data?.hasMore || false;
 
   return (
-    <div style={styles.app}>
+    <div style={{
+      ...styles.app,
+      backgroundColor: theme.colors.bgPrimary,
+      color: theme.colors.textPrimary,
+    }}>
       {/* Header */}
-      <header style={styles.header}>
-        <h1 style={styles.title}>K8s Log Explorer</h1>
+      <header style={{
+        ...styles.header,
+        backgroundColor: theme.colors.bgSecondary,
+        borderBottomColor: theme.colors.borderPrimary,
+      }}>
+        <h1 style={{ ...styles.title, color: theme.colors.textAccent }}>K8S Log Explorer</h1>
         <div style={styles.headerRight}>
+          <ThemeSelector />
           {storageStats.data && (
-            <div style={styles.storage}>
+            <div style={{ ...styles.storage, color: theme.colors.textMuted }}>
               Storage: {storageStats.data.current_size_mb.toFixed(1)} / {storageStats.data.max_size_mb} MB
               ({storageStats.data.usage_percent}%)
             </div>
@@ -237,7 +251,14 @@ export default function App() {
             onMouseLeave={() => setHoveredToggleButton(false)}
             style={{
               ...styles.toggleFiltersButton,
-              ...(hoveredToggleButton ? styles.toggleFiltersButtonHover : {}),
+              backgroundColor: theme.colors.buttonBg,
+              borderColor: theme.colors.buttonBorder,
+              color: theme.colors.buttonText,
+              ...(hoveredToggleButton ? {
+                backgroundColor: theme.colors.buttonBgHover,
+                borderColor: theme.colors.borderSecondary,
+                color: theme.colors.textAccent,
+              } : {}),
             }}
             title={showFilters ? 'Hide filters' : 'Show filters'}
           >
@@ -248,7 +269,11 @@ export default function App() {
 
       {/* Controls */}
       {showFilters && (
-      <div style={styles.controls}>
+      <div style={{
+        ...styles.controls,
+        backgroundColor: theme.colors.bgTertiary,
+        borderBottomColor: theme.colors.borderPrimary,
+      }}>
         <div style={styles.controlRow}>
           <EnvSelector
             value={selectedEnv}
@@ -257,8 +282,13 @@ export default function App() {
 
           {/* Namespace is fixed to jio-t2r-ms - display only */}
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Namespace</label>
-            <div style={styles.fixedValue}>{FIXED_NAMESPACE}</div>
+            <label style={{ ...styles.label, color: theme.colors.textMuted }}>Namespace</label>
+            <div style={{
+              ...styles.fixedValue,
+              backgroundColor: theme.colors.bgPrimary,
+              borderColor: theme.colors.borderPrimary,
+              color: theme.colors.accentSecondary,
+            }}>{FIXED_NAMESPACE}</div>
           </div>
 
           <SearchableSelect
@@ -304,7 +334,14 @@ export default function App() {
           />
           
           {viewMode !== 'logs' && (
-            <button onClick={handleClearSearch} style={styles.clearButton}>
+            <button 
+              onClick={handleClearSearch} 
+              style={{
+                ...styles.clearButton,
+                borderColor: theme.colors.borderSecondary,
+                color: theme.colors.textSecondary,
+              }}
+            >
               Clear Filter
             </button>
           )}
@@ -312,9 +349,13 @@ export default function App() {
 
         {/* View mode indicator */}
         {viewMode !== 'logs' && (
-          <div style={styles.viewIndicator}>
+          <div style={{
+            ...styles.viewIndicator,
+            backgroundColor: theme.colors.bgHover,
+            color: theme.colors.textSecondary,
+          }}>
             {viewMode === 'search' && (
-              <span>Showing search results for: <strong>"{activeSearch}"</strong></span>
+              <span>Showing search results for: <strong style={{ color: theme.colors.accentPrimary }}>"{activeSearch}"</strong></span>
             )}
             {viewMode === 'time-window' && timeWindow && (() => {
               const baseTime = new Date(timeWindow.timestamp);
@@ -330,8 +371,8 @@ export default function App() {
               });
               return (
                 <span>
-                  Showing logs from <strong>{formatTime(startTime)}</strong> to <strong>{formatTime(endTime)}</strong>
-                  <span style={{ color: '#888', marginLeft: '8px' }}>
+                  Showing logs from <strong style={{ color: theme.colors.accentPrimary }}>{formatTime(startTime)}</strong> to <strong style={{ color: theme.colors.accentPrimary }}>{formatTime(endTime)}</strong>
+                  <span style={{ color: theme.colors.textMuted, marginLeft: '8px' }}>
                     (±{timeWindow.minutes} min around {formatTime(baseTime)})
                   </span>
                 </span>
@@ -345,15 +386,15 @@ export default function App() {
       {/* Log Table */}
       <main style={styles.main}>
         {!selectedEnv ? (
-          <div style={styles.placeholder}>
+          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
             Select an environment to view logs
           </div>
         ) : !service ? (
-          <div style={styles.placeholder}>
+          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
             Select a service to view pods
           </div>
         ) : !selectedPod ? (
-          <div style={styles.placeholder}>
+          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
             Select a pod to view logs
           </div>
         ) : (
@@ -373,7 +414,12 @@ export default function App() {
 
       {/* Error display */}
       {(currentQuery.error || fetchLogsMutation.error) && (
-        <div style={styles.error}>
+        <div style={{
+          ...styles.error,
+          backgroundColor: theme.colors.errorBg,
+          borderTopColor: theme.colors.error,
+          color: theme.colors.error,
+        }}>
           {(currentQuery.error as Error)?.message || (fetchLogsMutation.error as Error)?.message}
         </div>
       )}
@@ -388,17 +434,18 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     backgroundColor: '#1a1a2e',
     color: '#eee',
+    fontSize: '14px',
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px 20px',
+    padding: '14px 24px',
     backgroundColor: '#16162a',
     borderBottom: '1px solid #333',
   },
   title: {
-    fontSize: '18px',
+    fontSize: '22px',
     fontWeight: 600,
     margin: 0,
     color: '#fff',
@@ -406,25 +453,25 @@ const styles: Record<string, React.CSSProperties> = {
   headerRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
+    gap: '20px',
   },
   storage: {
-    fontSize: '12px',
+    fontSize: '14px',
     color: '#888',
   },
   toggleFiltersButton: {
-    padding: '6px 12px',
-    fontSize: '12px',
+    padding: '8px 14px',
+    fontSize: '14px',
     fontWeight: 500,
     backgroundColor: '#2a2a40',
     border: '1px solid #444',
-    borderRadius: '4px',
+    borderRadius: '6px',
     color: '#ccc',
     cursor: 'pointer',
     transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
+    gap: '6px',
   },
   toggleFiltersButtonHover: {
     backgroundColor: '#3a3a5a',
@@ -432,65 +479,66 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
   },
   controls: {
-    padding: '16px 20px',
+    padding: '18px 24px',
     backgroundColor: '#1f1f35',
     borderBottom: '1px solid #333',
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
+    gap: '14px',
   },
   controlRow: {
     display: 'flex',
     alignItems: 'flex-end',
-    gap: '16px',
+    gap: '18px',
     flexWrap: 'wrap',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
-    minHeight: '48px', // Ensure consistent height with other components
+    gap: '6px',
+    minHeight: '54px',
   },
   label: {
-    fontSize: '12px',
-    fontWeight: 500,
+    fontSize: '13px',
+    fontWeight: 600,
     color: '#888',
     textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
   select: {
-    padding: '8px 12px',
-    fontSize: '14px',
+    padding: '10px 14px',
+    fontSize: '15px',
     border: '1px solid #333',
-    borderRadius: '4px',
+    borderRadius: '6px',
     backgroundColor: '#2a2a40',
     color: '#eee',
     cursor: 'pointer',
-    minWidth: '160px',
+    minWidth: '180px',
   },
   fixedValue: {
-    padding: '8px 12px',
-    fontSize: '14px',
+    padding: '10px 14px',
+    fontSize: '15px',
     border: '1px solid #333',
-    borderRadius: '4px',
+    borderRadius: '6px',
     backgroundColor: '#1a1a2e',
     color: '#6cb6ff',
-    minWidth: '160px',
-    fontFamily: 'monospace',
+    minWidth: '180px',
+    fontFamily: 'var(--font-family-mono, monospace)',
   },
   clearButton: {
-    padding: '8px 16px',
-    fontSize: '13px',
+    padding: '10px 18px',
+    fontSize: '14px',
     border: '1px solid #666',
-    borderRadius: '4px',
+    borderRadius: '6px',
     backgroundColor: 'transparent',
     color: '#aaa',
     cursor: 'pointer',
   },
   viewIndicator: {
-    padding: '8px 12px',
+    padding: '10px 14px',
     backgroundColor: '#2a2a40',
-    borderRadius: '4px',
-    fontSize: '13px',
+    borderRadius: '6px',
+    fontSize: '14px',
     color: '#aaa',
   },
   main: {
@@ -503,13 +551,13 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     height: '100%',
     color: '#666',
-    fontSize: '16px',
+    fontSize: '18px',
   },
   error: {
-    padding: '12px 20px',
+    padding: '14px 24px',
     backgroundColor: '#4a2a2a',
     borderTop: '1px solid #6a3a3a',
     color: '#ff8080',
-    fontSize: '13px',
+    fontSize: '14px',
   },
 };

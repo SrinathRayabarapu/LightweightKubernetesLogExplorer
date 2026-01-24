@@ -3,6 +3,7 @@
  */
 
 import { useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 interface SearchBarProps {
   value: string;
@@ -12,11 +13,67 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProps) {
+  const { theme } = useTheme();
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onSearch();
     }
   }, [onSearch]);
+
+  const styles = {
+    container: {
+      display: 'flex',
+      gap: '10px',
+      flex: 1,
+    },
+    inputWrapper: {
+      position: 'relative' as const,
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+    },
+    icon: {
+      position: 'absolute' as const,
+      left: '14px',
+      fontSize: '16px',
+      color: theme.colors.textMuted,
+    },
+    input: {
+      width: '100%',
+      padding: '10px 40px',
+      fontSize: '15px',
+      border: `1px solid ${theme.colors.inputBorder}`,
+      borderRadius: '6px',
+      backgroundColor: theme.colors.inputBg,
+      color: theme.colors.inputText,
+    },
+    clearButton: {
+      position: 'absolute' as const,
+      right: '10px',
+      background: 'none',
+      border: 'none',
+      fontSize: '20px',
+      color: theme.colors.textMuted,
+      cursor: 'pointer',
+      padding: '0 6px',
+    },
+    searchButton: {
+      padding: '10px 20px',
+      fontSize: '15px',
+      fontWeight: 600,
+      border: 'none',
+      borderRadius: '6px',
+      backgroundColor: theme.colors.accentPrimary,
+      color: '#fff',
+      cursor: 'pointer',
+    },
+    buttonDisabled: {
+      backgroundColor: theme.colors.bgHover,
+      color: theme.colors.textMuted,
+      cursor: 'not-allowed',
+    },
+  };
 
   return (
     <div style={styles.container}>
@@ -55,57 +112,3 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    gap: '8px',
-    flex: 1,
-  },
-  inputWrapper: {
-    position: 'relative',
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-  },
-  icon: {
-    position: 'absolute',
-    left: '12px',
-    fontSize: '14px',
-    color: '#666',
-  },
-  input: {
-    width: '100%',
-    padding: '8px 36px',
-    fontSize: '14px',
-    border: '1px solid #333',
-    borderRadius: '4px',
-    backgroundColor: '#2a2a40',
-    color: '#eee',
-  },
-  clearButton: {
-    position: 'absolute',
-    right: '8px',
-    background: 'none',
-    border: 'none',
-    fontSize: '18px',
-    color: '#666',
-    cursor: 'pointer',
-    padding: '0 4px',
-  },
-  searchButton: {
-    padding: '8px 16px',
-    fontSize: '14px',
-    fontWeight: 500,
-    border: 'none',
-    borderRadius: '4px',
-    backgroundColor: '#4a9eff',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-  buttonDisabled: {
-    backgroundColor: '#333',
-    color: '#666',
-    cursor: 'not-allowed',
-  },
-};

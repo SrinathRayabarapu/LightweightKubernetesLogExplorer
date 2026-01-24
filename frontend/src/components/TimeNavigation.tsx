@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 interface TimeNavigationProps {
   timestamp: string;
@@ -10,12 +11,74 @@ interface TimeNavigationProps {
 }
 
 export function TimeNavigation({ timestamp, onNavigate }: TimeNavigationProps) {
+  const { theme } = useTheme();
   const [showCustom, setShowCustom] = useState(false);
   const [customMinutes, setCustomMinutes] = useState(15);
 
   const handleCustomNavigate = () => {
     onNavigate(timestamp, customMinutes, 'around');
     setShowCustom(false);
+  };
+
+  const styles = {
+    container: {
+      display: 'flex',
+      gap: '4px',
+      alignItems: 'center',
+      position: 'relative' as const,
+      marginTop: '6px',
+    },
+    button: {
+      padding: '4px 8px',
+      fontSize: '12px',
+      border: `1px solid ${theme.colors.buttonBorder}`,
+      borderRadius: '4px',
+      backgroundColor: theme.colors.buttonBg,
+      color: theme.colors.buttonText,
+      cursor: 'pointer',
+    },
+    activeButton: {
+      backgroundColor: theme.colors.accentPrimary,
+      borderColor: theme.colors.accentPrimary,
+      color: '#fff',
+    },
+    customPopup: {
+      position: 'absolute' as const,
+      top: '100%',
+      left: 0,
+      marginTop: '6px',
+      padding: '10px',
+      backgroundColor: theme.colors.bgTertiary,
+      border: `1px solid ${theme.colors.borderSecondary}`,
+      borderRadius: '6px',
+      display: 'flex',
+      gap: '6px',
+      alignItems: 'center',
+      zIndex: 100,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    },
+    customInput: {
+      width: '55px',
+      padding: '6px',
+      fontSize: '13px',
+      border: `1px solid ${theme.colors.inputBorder}`,
+      borderRadius: '4px',
+      backgroundColor: theme.colors.inputBg,
+      color: theme.colors.inputText,
+    },
+    customLabel: {
+      fontSize: '13px',
+      color: theme.colors.textMuted,
+    },
+    customButton: {
+      padding: '6px 10px',
+      fontSize: '13px',
+      border: 'none',
+      borderRadius: '4px',
+      backgroundColor: theme.colors.accentPrimary,
+      color: '#fff',
+      cursor: 'pointer',
+    },
   };
 
   return (
@@ -61,62 +124,3 @@ export function TimeNavigation({ timestamp, onNavigate }: TimeNavigationProps) {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    gap: '4px',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  button: {
-    padding: '2px 6px',
-    fontSize: '11px',
-    border: '1px solid #444',
-    borderRadius: '3px',
-    backgroundColor: '#333',
-    color: '#aaa',
-    cursor: 'pointer',
-  },
-  activeButton: {
-    backgroundColor: '#4a9eff',
-    borderColor: '#4a9eff',
-    color: '#fff',
-  },
-  customPopup: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    marginTop: '4px',
-    padding: '8px',
-    backgroundColor: '#2a2a40',
-    border: '1px solid #444',
-    borderRadius: '4px',
-    display: 'flex',
-    gap: '4px',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  customInput: {
-    width: '50px',
-    padding: '4px',
-    fontSize: '12px',
-    border: '1px solid #444',
-    borderRadius: '3px',
-    backgroundColor: '#1a1a2e',
-    color: '#eee',
-  },
-  customLabel: {
-    fontSize: '12px',
-    color: '#888',
-  },
-  customButton: {
-    padding: '4px 8px',
-    fontSize: '12px',
-    border: 'none',
-    borderRadius: '3px',
-    backgroundColor: '#4a9eff',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-};
