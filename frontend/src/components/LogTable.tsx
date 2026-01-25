@@ -1064,16 +1064,15 @@ ${log.message}`;
         </table>
       </div>
 
+      {/* Floating Load More button */}
       {hasMore && (
-        <div style={styles.loadMore}>
-          <button
-            onClick={onLoadMore}
-            disabled={isLoading}
-            style={styles.loadMoreButton}
-          >
-            {isLoading ? 'Loading...' : 'Load More'}
-          </button>
-        </div>
+        <button
+          onClick={onLoadMore}
+          disabled={isLoading}
+          style={styles.loadMoreButton}
+        >
+          {isLoading ? '⟳ Loading...' : '↓ Load More'}
+        </button>
       )}
 
       {/* Text Selection Popup */}
@@ -1370,20 +1369,25 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       color: colors.textMuted,
       fontSize: '16px',
     },
-    loadMore: {
-      padding: '16px',
-      textAlign: 'center' as const,
-      borderTop: `1px solid ${colors.borderPrimary}`,
-    },
     loadMoreButton: {
-      padding: '10px 28px',
-      fontSize: '15px',
-      border: `1px solid ${colors.buttonBorder}`,
-      borderRadius: '6px',
-      backgroundColor: colors.buttonBg,
-      color: colors.textPrimary,
+      position: 'fixed' as const,
+      bottom: '24px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '12px 28px',
+      fontSize: '14px',
+      border: 'none',
+      borderRadius: '24px',
+      backgroundColor: colors.accentPrimary,
+      color: '#fff',
       cursor: 'pointer',
-      fontWeight: 500,
+      fontWeight: 600,
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      transition: 'transform 0.2s, box-shadow 0.2s',
     },
     loadingIndicator: {
       display: 'flex',
