@@ -84,15 +84,18 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
       flex: 1,
       display: 'flex',
       alignItems: 'center',
+      // Background goes on wrapper when overlay is shown
+      backgroundColor: hasOperators ? theme.colors.inputBg : 'transparent',
+      borderRadius: '6px',
     },
     icon: {
       position: 'absolute' as const,
       left: '14px',
       fontSize: '16px',
       color: theme.colors.textMuted,
-      zIndex: 2,
+      zIndex: 3,
     },
-    // The overlay that shows highlighted text (behind the input)
+    // The overlay that shows highlighted text - positioned ABOVE input with pointer-events: none
     highlightOverlay: {
       position: 'absolute' as const,
       left: '40px',
@@ -103,21 +106,25 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
       fontFamily: 'inherit',
       whiteSpace: 'pre' as const,
       pointerEvents: 'none' as const,
-      zIndex: 1,
+      zIndex: 2, // Above input
       overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
     },
-    // The actual input - text is transparent when we have operators
+    // The actual input - background transparent when overlay shown, text transparent
     input: {
       width: '100%',
       padding: '10px 40px',
       fontSize: '15px',
       border: `1px solid ${theme.colors.inputBorder}`,
       borderRadius: '6px',
-      backgroundColor: theme.colors.inputBg,
+      // Background transparent when showing overlay, otherwise normal
+      backgroundColor: hasOperators ? 'transparent' : theme.colors.inputBg,
+      // Text transparent when showing overlay so overlay text is visible
       color: hasOperators ? 'transparent' : theme.colors.inputText,
       caretColor: theme.colors.inputText, // Keep cursor visible
       position: 'relative' as const,
-      zIndex: 2,
+      zIndex: 1,
     },
     clearButton: {
       position: 'absolute' as const,
@@ -128,7 +135,7 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
       color: theme.colors.textMuted,
       cursor: 'pointer',
       padding: '0 6px',
-      zIndex: 3,
+      zIndex: 4,
     },
     searchButton: {
       padding: '10px 20px',
@@ -152,7 +159,7 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
       <div style={styles.inputWrapper}>
         <span style={styles.icon}>&#128269;</span>
         
-        {/* Highlight overlay - only shown when there are AND/OR operators */}
+        {/* Highlight overlay - shown ABOVE input when there are AND/OR operators */}
         {hasOperators && value && (
           <div style={styles.highlightOverlay}>
             <HighlightedText 
