@@ -306,38 +306,63 @@ export default function App() {
 
   // Field filter handlers
   const handleFieldClick = useCallback((field: string, value: string) => {
-    // Check if this filter is already active
-    const exists = fieldFilters.some(f => f.field === field && f.value === value);
-    if (exists) {
-      // Remove it
-      setFieldFilters(prev => prev.filter(f => !(f.field === field && f.value === value)));
-    } else {
-      // Add it - build search query with field=value
-      const filterTerm = `${field}=${value}`;
-      const newQuery = searchQuery.trim() 
-        ? `${searchQuery.trim()} AND ${filterTerm}` 
-        : filterTerm;
+    // Check if this exact filter is already active (toggle off)
+    const exactMatch = fieldFilters.some(f => f.field === field && f.value === value);
+    if (exactMatch) {
+      // Toggle off - remove this filter
+      const newFilters = fieldFilters.filter(f => !(f.field === field && f.value === value));
+      setFieldFilters(newFilters);
+      
+      // Rebuild search query from remaining filters
+      const filterTerms = newFilters.map(f => `${f.field}=${f.value}`);
+      const newQuery = filterTerms.join(' AND ');
       
       setSearchQuery(newQuery);
-      setActiveSearch(newQuery);
-      setViewMode('search');
-      setFieldFilters(prev => [...prev, { field, value }]);
+      if (newQuery) {
+        setActiveSearch(newQuery);
+        setViewMode('search');
+      } else {
+        setActiveSearch('');
+        setViewMode('logs');
+      }
       setOffset(0);
+      return;
     }
-  }, [searchQuery, fieldFilters]);
+    
+    // Check if there's already a filter for this field (replace it - single selection per field)
+    const existingFieldFilter = fieldFilters.find(f => f.field === field);
+    let newFilters: { field: string; value: string }[];
+    
+    if (existingFieldFilter) {
+      // Replace the existing value for this field
+      newFilters = fieldFilters.map(f => 
+        f.field === field ? { field, value } : f
+      );
+    } else {
+      // Add new field filter
+      newFilters = [...fieldFilters, { field, value }];
+    }
+    
+    setFieldFilters(newFilters);
+    
+    // Rebuild search query from all filters
+    const filterTerms = newFilters.map(f => `${f.field}=${f.value}`);
+    const newQuery = filterTerms.join(' AND ');
+    
+    setSearchQuery(newQuery);
+    setActiveSearch(newQuery);
+    setViewMode('search');
+    setOffset(0);
+  }, [fieldFilters]);
 
   const handleClearFieldFilter = useCallback((field: string, value: string) => {
     // Remove the filter from fieldFilters
-    setFieldFilters(prev => prev.filter(f => !(f.field === field && f.value === value)));
+    const newFilters = fieldFilters.filter(f => !(f.field === field && f.value === value));
+    setFieldFilters(newFilters);
     
-    // Remove from search query
-    let newQuery = searchQuery;
-    
-    // Try to remove "AND field=value" or "field=value AND" or just "field=value"
-    newQuery = newQuery.replace(new RegExp(`\\s+AND\\s+${field}=${value}`, 'gi'), '');
-    newQuery = newQuery.replace(new RegExp(`${field}=${value}\\s+AND\\s+`, 'gi'), '');
-    newQuery = newQuery.replace(new RegExp(`^${field}=${value}$`, 'gi'), '');
-    newQuery = newQuery.trim();
+    // Rebuild search query from remaining filters
+    const filterTerms = newFilters.map(f => `${f.field}=${f.value}`);
+    const newQuery = filterTerms.join(' AND ');
     
     setSearchQuery(newQuery);
     if (newQuery) {
@@ -348,29 +373,15 @@ export default function App() {
       setViewMode('logs');
     }
     setOffset(0);
-  }, [searchQuery]);
+  }, [fieldFilters]);
 
   const handleClearAllFieldFilters = useCallback(() => {
-    // Clear all field filters from search query
-    let newQuery = searchQuery;
-    fieldFilters.forEach(({ field, value }) => {
-      newQuery = newQuery.replace(new RegExp(`\\s+AND\\s+${field}=${value}`, 'gi'), '');
-      newQuery = newQuery.replace(new RegExp(`${field}=${value}\\s+AND\\s+`, 'gi'), '');
-      newQuery = newQuery.replace(new RegExp(`^${field}=${value}$`, 'gi'), '');
-    });
-    newQuery = newQuery.trim();
-    
     setFieldFilters([]);
-    setSearchQuery(newQuery);
-    if (newQuery) {
-      setActiveSearch(newQuery);
-      setViewMode('search');
-    } else {
-      setActiveSearch('');
-      setViewMode('logs');
-    }
+    setSearchQuery('');
+    setActiveSearch('');
+    setViewMode('logs');
     setOffset(0);
-  }, [searchQuery, fieldFilters]);
+  }, []);
 
   // Manual refresh handler - fetches ALL available logs
   const handleManualRefresh = useCallback(() => {
