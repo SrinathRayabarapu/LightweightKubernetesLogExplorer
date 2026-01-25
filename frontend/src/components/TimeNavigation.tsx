@@ -2,7 +2,7 @@
  * Time navigation component for Splunk-style log browsing.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 interface TimeNavigationProps {
@@ -14,6 +14,28 @@ export function TimeNavigation({ timestamp, onNavigate }: TimeNavigationProps) {
   const { theme } = useTheme();
   const [showCustom, setShowCustom] = useState(false);
   const [customMinutes, setCustomMinutes] = useState(15);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    if (!showCustom) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowCustom(false);
+      }
+    };
+
+    // Add listener with a small delay to prevent immediate close
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCustom]);
 
   const handleCustomNavigate = () => {
     onNavigate(timestamp, customMinutes, 'around');
@@ -82,7 +104,7 @@ export function TimeNavigation({ timestamp, onNavigate }: TimeNavigationProps) {
   };
 
   return (
-    <div style={styles.container}>
+    <div ref={containerRef} style={styles.container}>
       <button
         onClick={() => onNavigate(timestamp, 5, 'around')}
         style={styles.button}

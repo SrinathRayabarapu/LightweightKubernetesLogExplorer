@@ -326,21 +326,25 @@ frontend/src/
 │       └── fetchAll parameter support
 │
 ├── components/
-│   ├── LogTable.tsx        # Main log display (882 lines)
+│   ├── LogTable.tsx        # Main log display
 │   │   ├── Log rendering with severity highlighting
 │   │   ├── JSON formatting (requestPayload)
-│   │   ├── Search term highlighting
+│   │   ├── Multi-term search highlighting (AND/OR)
+│   │   ├── Text selection → "Add to Search" popup
 │   │   ├── Copy to clipboard (floating button)
+│   │   ├── Ask AI (Perplexity integration)
+│   │   ├── Excel export (filtered/all logs)
+│   │   ├── Font size controls (+/−)
 │   │   ├── Filter toggle ("Show All" / "Filtering Off")
 │   │   ├── Auto-hiding headers on scroll
 │   │   ├── Time navigation integration
-│   │   └── Load more pagination
+│   │   └── Floating "Load More" button
 │   │
 │   ├── SearchBar.tsx       # Search input
 │   ├── TimeNavigation.tsx  # ±5m/±10m buttons
 │   ├── EnvSelector.tsx     # Environment dropdown
 │   ├── PodSelector.tsx     # Pod dropdown with status
-│   ├── SearchableSelect.tsx # Autocomplete dropdown
+│   ├── SearchableSelect.tsx # Autocomplete dropdown (Enter auto-selects single match)
 │   ├── RefreshIndicator.tsx # Refresh button & auto-refresh (10s/30s/1m/2m/5m/10m)
 │   │   # LogTable features: font size controls, Copy, Ask AI (Perplexity), Excel export
 │   └── ThemeSelector.tsx   # Theme dropdown
@@ -749,6 +753,30 @@ def escape_fts5_query(query: str) -> str:
     escaped = query.replace('"', '""')
     return f'"{escaped}"'
 ```
+
+---
+
+### Issue #8: AND/OR Search Not Matching Correctly
+
+**Symptom:** Search like `term1 AND term2` returned no results even when both terms existed.
+
+**Root Cause:** FTS5's boolean operators can be unreliable due to tokenization differences.
+
+**Solution:** Use SQL LIKE for AND/OR queries instead of FTS5.
+
+```python
+async def search_logs(query: str, ...):
+    # For AND/OR queries, use LIKE-based search for reliability
+    if ' OR ' in query or ' AND ' in query:
+        return await _search_logs_like(...)
+    # Simple queries use FTS5 for performance
+    return await _search_logs_fts5(...)
+```
+
+**Benefits:**
+- 100% reliable matching with LIKE
+- FTS5 still used for simple single-term queries (performance)
+- Supports complex queries: `term1 AND term2 OR term3`
 
 ---
 

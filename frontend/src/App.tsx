@@ -153,6 +153,26 @@ export default function App() {
     }
   }, [searchQuery]);
 
+  // Handler to add selected text to search
+  const handleAddToSearch = useCallback((selectedText: string) => {
+    const trimmed = selectedText.trim();
+    if (!trimmed) return;
+
+    // If the selected text contains spaces, wrap it in quotes
+    const textToAdd = trimmed.includes(' ') ? `"${trimmed}"` : trimmed;
+    
+    // Build the new query
+    const currentQuery = searchQuery.trim();
+    const newQuery = currentQuery ? `${currentQuery} AND ${textToAdd}` : textToAdd;
+    
+    // Update search query and trigger search
+    setSearchQuery(newQuery);
+    setActiveSearch(newQuery);
+    setViewMode('search');
+    setTimeWindow(null);
+    setOffset(0);
+  }, [searchQuery]);
+
   // Clear search and return to logs view
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
@@ -355,17 +375,14 @@ export default function App() {
           )}
         </div>
 
-        {/* View mode indicator */}
-        {viewMode !== 'logs' && (
+        {/* Time window indicator - only shown for time-based navigation */}
+        {viewMode === 'time-window' && timeWindow && (
           <div style={{
             ...styles.viewIndicator,
             backgroundColor: theme.colors.bgHover,
             color: theme.colors.textSecondary,
           }}>
-            {viewMode === 'search' && (
-              <span>Showing search results for: <strong style={{ color: theme.colors.accentPrimary }}>"{activeSearch}"</strong></span>
-            )}
-            {viewMode === 'time-window' && timeWindow && (() => {
+            {(() => {
               const baseTime = new Date(timeWindow.timestamp);
               const startTime = new Date(baseTime.getTime() - timeWindow.minutes * 60 * 1000);
               const endTime = new Date(baseTime.getTime() + timeWindow.minutes * 60 * 1000);
@@ -419,6 +436,7 @@ export default function App() {
             searchQuery={activeSearch}
             onLoadMore={handleLoadMore}
             onTimeNavigate={handleTimeNavigate}
+            onAddToSearch={handleAddToSearch}
           />
         )}
       </main>

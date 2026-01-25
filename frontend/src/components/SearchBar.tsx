@@ -1,5 +1,6 @@
 /**
  * Search bar component for full-text log search.
+ * Supports Splunk-style AND/OR operators.
  */
 
 import { useCallback } from 'react';
@@ -84,7 +85,7 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
           value={value}
           onChange={e => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search logs..."
+          placeholder="Search logs... (use AND / OR)"
           disabled={disabled}
           style={styles.input}
         />

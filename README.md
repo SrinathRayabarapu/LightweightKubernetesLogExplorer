@@ -67,7 +67,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | Feature | Description |
 |---------|-------------|
 | **Complete Log History** | Fetches ALL available logs from K8s (no artificial limits) |
-| **Paginated Display** | Shows 1000 logs per page with "Load More" for additional batches |
+| **Paginated Display** | Shows 1000 logs per page with floating "Load More" button |
 | **Log Filtering** | Configurable exclusion patterns (healthchecks, probes, etc.) |
 | **Filter Toggle** | "Show All" button to temporarily disable filters and see all logs |
 | **Multi-line Support** | Proper handling of Java stack traces and multi-line entries |
@@ -82,10 +82,13 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | Feature | Description |
 |---------|-------------|
 | **Full-Text Search** | FTS5-powered instant search across all log messages |
-| **Search Highlighting** | Matched terms highlighted in yellow for easy identification |
+| **Splunk-Style AND/OR** | Combine search terms: `error AND timeout` or `error OR warning` |
+| **Text Selection Search** | Select text in logs → click "Add to Search" to append to query |
+| **Search Highlighting** | All matched terms highlighted in yellow |
 | **Time Window Navigation** | Click any timestamp → navigate ±5min/±10min around it |
 | **Time Range Display** | Shows calculated start/end time for time window queries |
 | **Search Persistence** | Search automatically re-applied when switching pods |
+| **Auto-Select Dropdown** | Press Enter to auto-select when only one option matches |
 
 ### UI & Theming
 
@@ -699,8 +702,13 @@ Get-Content logs\frontend.log -Wait
 
 - Enter search terms in the search bar
 - Press Enter or click Search
-- **Highlighting**: Matched terms highlighted in yellow
-- **FTS5 Search**: Supports phrase search with quotes: `"error occurred"`
+- **AND/OR Operations**:
+  - `error AND timeout` - Both terms must match
+  - `error OR warning` - Either term matches
+  - `"error occurred" AND exception` - Quoted phrases with AND
+  - Default: space-separated words are AND: `error timeout` = `error AND timeout`
+- **Highlighting**: All matched terms highlighted in yellow
+- **Text Selection**: Select any text in logs → popup appears → click "Add to Search"
 - **Persistence**: Search re-applied automatically when changing pods
 
 ### Time Navigation

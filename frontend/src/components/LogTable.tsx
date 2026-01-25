@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import { LogEntry } from '../api/client';
 import { TimeNavigation } from './TimeNavigation';
 import { useTheme } from '../context/ThemeContext';
+import { parseSearchQuery } from '../utils/searchParser';
 
 interface LogTableProps {
   logs: LogEntry[];
@@ -21,6 +22,7 @@ interface LogTableProps {
   searchQuery?: string; // Current search query for highlighting matches
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
+  onAddToSearch?: (text: string) => void; // Callback to add selected text to search
 }
 
 // Font size constants
@@ -29,7 +31,7 @@ const MAX_FONT_SIZE = 22;
 const DEFAULT_FONT_SIZE = 14;
 const FONT_SIZE_STORAGE_KEY = 'logTableFontSize';
 
-export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate }: LogTableProps) {
+export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate, onAddToSearch }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
@@ -44,6 +46,11 @@ export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCou
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
+  
+  // Text selection state
+  const [selectedText, setSelectedText] = useState<string>('');
+  const [selectionPosition, setSelectionPosition] = useState<{ top: number; left: number } | null>(null);
+  const selectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Font size state with localStorage persistence
   const [fontSize, setFontSize] = useState<number>(() => {
@@ -532,6 +539,77 @@ ${log.message}`;
   }, []);
 
   /**
+   * Handle text selection in log messages.
+   */
+  useEffect(() => {
+    const handleMouseUp = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        // Clear selection popup if no selection
+        if (selectionTimeoutRef.current) {
+          clearTimeout(selectionTimeoutRef.current);
+        }
+        selectionTimeoutRef.current = setTimeout(() => {
+          setSelectedText('');
+          setSelectionPosition(null);
+        }, 200);
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      const selectedText = range.toString().trim();
+
+      // Only show popup if text is selected and it's within a log message
+      if (selectedText.length > 0 && selectedText.length < 500) {
+        // Check if selection is within a log message (pre element)
+        const container = range.commonAncestorContainer;
+        let preElement: HTMLElement | null = null;
+        
+        if (container.nodeType === Node.TEXT_NODE) {
+          preElement = container.parentElement?.closest('pre') as HTMLElement | null;
+        } else if (container.nodeType === Node.ELEMENT_NODE) {
+          preElement = (container as HTMLElement).closest('pre') as HTMLElement | null;
+        }
+
+        if (preElement) {
+          // Get position relative to viewport
+          const rect = range.getBoundingClientRect();
+          setSelectedText(selectedText);
+          setSelectionPosition({
+            top: rect.top - 40, // Position above selection
+            left: rect.left + rect.width / 2, // Center horizontally
+          });
+        }
+      } else {
+        setSelectedText('');
+        setSelectionPosition(null);
+      }
+    };
+
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mouseup', handleMouseUp);
+      if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * Handle adding selected text to search.
+   */
+  const handleAddSelectedToSearch = () => {
+    if (selectedText && onAddToSearch) {
+      onAddToSearch(selectedText);
+      setSelectedText('');
+      setSelectionPosition(null);
+      // Clear selection
+      window.getSelection()?.removeAllRanges();
+    }
+  };
+
+  /**
    * Handle showing tooltip with delay prevention.
    */
   const handleShowTooltip = () => {
@@ -587,46 +665,109 @@ ${log.message}`;
 
   /**
    * Highlight search matches in text.
-   * Returns JSX elements with highlighted spans for matches.
+   * Supports multiple terms from parsed search query (AND/OR operations).
+   * Returns JSX elements with highlighted spans for all matching terms.
    */
   const highlightSearchMatches = useMemo(() => {
     if (!searchQuery || searchQuery.trim().length === 0) {
       return (text: string) => text;
     }
 
-    const query = searchQuery.trim();
-    // Escape special regex characters in the search query
-    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    // Parse the search query to get all terms
+    const parsed = parseSearchQuery(searchQuery);
+    if (parsed.terms.length === 0) {
+      return (text: string) => text;
+    }
+
+    // Create regex patterns for each term (case-insensitive)
+    const patterns = parsed.terms.map(term => {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`(${escaped})`, 'gi');
+    });
 
     return (text: string): React.ReactNode => {
-      const parts = text.split(regex);
-      if (parts.length === 1) {
+      // Build an array of all matches with their positions
+      interface Match {
+        start: number;
+        end: number;
+        text: string;
+      }
+      
+      const matches: Match[] = [];
+      
+      // Find all matches for each pattern
+      patterns.forEach(pattern => {
+        let match;
+        pattern.lastIndex = 0; // Reset regex
+        while ((match = pattern.exec(text)) !== null) {
+          matches.push({
+            start: match.index,
+            end: match.index + match[0].length,
+            text: match[0],
+          });
+        }
+      });
+
+      if (matches.length === 0) {
         return text; // No matches found
       }
 
-      return parts.map((part, index) => {
-        if (part.toLowerCase() === query.toLowerCase()) {
-          return (
-            <mark
-              key={index}
-              style={{
-                backgroundColor: theme.colors.searchHighlight,
-                color: theme.colors.searchHighlightText,
-                padding: '1px 2px',
-                borderRadius: '2px',
-                fontWeight: 600,
-              }}
-            >
-              {part}
-            </mark>
-          );
-        }
-        return part;
-      });
-    };
-  }, [searchQuery]);
+      // Sort matches by position
+      matches.sort((a, b) => a.start - b.start);
 
+      // Merge overlapping matches
+      const mergedMatches: Match[] = [];
+      for (const match of matches) {
+        const lastMatch = mergedMatches[mergedMatches.length - 1];
+        if (lastMatch && match.start <= lastMatch.end) {
+          // Overlapping or adjacent - merge them
+          lastMatch.end = Math.max(lastMatch.end, match.end);
+          lastMatch.text = text.substring(lastMatch.start, lastMatch.end);
+        } else {
+          // New match
+          mergedMatches.push({ ...match });
+        }
+      }
+
+      // Build the highlighted text
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+
+      mergedMatches.forEach((match, index) => {
+        // Add text before match
+        if (match.start > lastIndex) {
+          parts.push(text.substring(lastIndex, match.start));
+        }
+
+        // Add highlighted match
+        parts.push(
+          <mark
+            key={`match-${index}`}
+            style={{
+              backgroundColor: theme.colors.searchHighlight,
+              color: theme.colors.searchHighlightText,
+              padding: '1px 2px',
+              borderRadius: '2px',
+              fontWeight: 600,
+            }}
+          >
+            {match.text}
+          </mark>
+        );
+
+        lastIndex = match.end;
+      });
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        parts.push(text.substring(lastIndex));
+      }
+
+      return <>{parts}</>;
+    };
+  }, [searchQuery, theme.colors.searchHighlight, theme.colors.searchHighlightText]);
+
+  // Show loading state when fetching (whether or not we have logs)
   if (isLoading && logs.length === 0) {
     return (
       <div style={styles.loading}>
@@ -636,8 +777,20 @@ ${log.message}`;
     );
   }
 
-  if (!logs.length) {
+  // Show empty state only when NOT loading and no logs
+  // This prevents the momentary "No logs" flash during pod changes
+  if (!logs.length && !isLoading) {
     return <div style={styles.empty}>No logs found. Try fetching logs first.</div>;
+  }
+  
+  // If we have no logs but are loading, show loading state
+  if (!logs.length) {
+    return (
+      <div style={styles.loading}>
+        <span style={styles.spinner}>⟳</span>
+        <span>Fetching logs...</span>
+      </div>
+    );
   }
 
   return (
@@ -911,14 +1064,40 @@ ${log.message}`;
         </table>
       </div>
 
+      {/* Floating Load More button */}
       {hasMore && (
-        <div style={styles.loadMore}>
+        <button
+          onClick={onLoadMore}
+          disabled={isLoading}
+          style={styles.loadMoreButton}
+        >
+          {isLoading ? '⟳ Loading...' : '↓ Load More'}
+        </button>
+      )}
+
+      {/* Text Selection Popup */}
+      {selectedText && selectionPosition && onAddToSearch && (
+        <div
+          style={{
+            ...styles.selectionPopup,
+            top: `${selectionPosition.top}px`,
+            left: `${selectionPosition.left}px`,
+            transform: 'translate(-50%, 0)',
+          }}
+        >
+          <div style={styles.selectionPopupText}>
+            "{selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}"
+          </div>
           <button
-            onClick={onLoadMore}
-            disabled={isLoading}
-            style={styles.loadMoreButton}
+            onClick={handleAddSelectedToSearch}
+            style={styles.selectionPopupButton}
+            title="Add to search"
           >
-            {isLoading ? 'Loading...' : 'Load More'}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add to Search
           </button>
         </div>
       )}
@@ -1190,20 +1369,25 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
       color: colors.textMuted,
       fontSize: '16px',
     },
-    loadMore: {
-      padding: '16px',
-      textAlign: 'center' as const,
-      borderTop: `1px solid ${colors.borderPrimary}`,
-    },
     loadMoreButton: {
-      padding: '10px 28px',
-      fontSize: '15px',
-      border: `1px solid ${colors.buttonBorder}`,
-      borderRadius: '6px',
-      backgroundColor: colors.buttonBg,
-      color: colors.textPrimary,
+      position: 'fixed' as const,
+      bottom: '24px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      padding: '12px 28px',
+      fontSize: '14px',
+      border: 'none',
+      borderRadius: '24px',
+      backgroundColor: colors.accentPrimary,
+      color: '#fff',
       cursor: 'pointer',
-      fontWeight: 500,
+      fontWeight: 600,
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      transition: 'transform 0.2s, box-shadow 0.2s',
     },
     loadingIndicator: {
       display: 'flex',
@@ -1315,6 +1499,42 @@ function getThemedStyles(colors: import('../config/themes').Theme['colors']) {
     downloadOptionDesc: {
       fontSize: '12px',
       color: colors.textMuted,
+    },
+    selectionPopup: {
+      position: 'fixed' as const,
+      backgroundColor: colors.bgTertiary,
+      border: `1px solid ${colors.borderSecondary}`,
+      borderRadius: '8px',
+      padding: '10px 14px',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+      zIndex: 10003, // Above everything
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '8px',
+      minWidth: '200px',
+      maxWidth: '400px',
+    },
+    selectionPopupText: {
+      fontSize: '13px',
+      color: colors.textSecondary,
+      fontStyle: 'italic' as const,
+      wordBreak: 'break-word' as const,
+      marginBottom: '4px',
+    },
+    selectionPopupButton: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '6px',
+      padding: '6px 12px',
+      fontSize: '13px',
+      fontWeight: 500,
+      border: `1px solid ${colors.buttonBorder}`,
+      borderRadius: '6px',
+      backgroundColor: colors.accentPrimary,
+      color: '#fff',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
     },
   };
 }
