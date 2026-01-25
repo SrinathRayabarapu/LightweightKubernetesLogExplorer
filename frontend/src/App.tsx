@@ -153,6 +153,26 @@ export default function App() {
     }
   }, [searchQuery]);
 
+  // Handler to add selected text to search
+  const handleAddToSearch = useCallback((selectedText: string) => {
+    const trimmed = selectedText.trim();
+    if (!trimmed) return;
+
+    // If the selected text contains spaces, wrap it in quotes
+    const textToAdd = trimmed.includes(' ') ? `"${trimmed}"` : trimmed;
+    
+    // Build the new query
+    const currentQuery = searchQuery.trim();
+    const newQuery = currentQuery ? `${currentQuery} AND ${textToAdd}` : textToAdd;
+    
+    // Update search query and trigger search
+    setSearchQuery(newQuery);
+    setActiveSearch(newQuery);
+    setViewMode('search');
+    setTimeWindow(null);
+    setOffset(0);
+  }, [searchQuery]);
+
   // Clear search and return to logs view
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
@@ -419,6 +439,7 @@ export default function App() {
             searchQuery={activeSearch}
             onLoadMore={handleLoadMore}
             onTimeNavigate={handleTimeNavigate}
+            onAddToSearch={handleAddToSearch}
           />
         )}
       </main>
