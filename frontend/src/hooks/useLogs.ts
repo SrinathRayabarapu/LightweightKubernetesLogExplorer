@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
+import { parseSearchQuery, toFts5Query } from '../utils/searchParser';
 
 export function useEnvs() {
   return useQuery({
@@ -72,10 +73,17 @@ export function useSearchLogs(params: {
   limit?: number;
   enabled?: boolean;
 }) {
+  // Parse the search query and convert to FTS5 format
+  const parsedQuery = parseSearchQuery(params.query);
+  const fts5Query = toFts5Query(parsedQuery);
+  
   return useQuery({
     queryKey: ['search', params.env, params.query, params.namespace, params.service, params.pod, params.start_time, params.end_time],
-    queryFn: () => api.searchLogs(params),
-    enabled: params.enabled !== false && !!params.env && !!params.query,
+    queryFn: () => api.searchLogs({
+      ...params,
+      query: fts5Query, // Use FTS5 formatted query
+    }),
+    enabled: params.enabled !== false && !!params.env && !!params.query && fts5Query.length > 0,
   });
 }
 
