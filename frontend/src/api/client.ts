@@ -176,4 +176,23 @@ export const api = {
     fetchJson<{ subscriptions: Array<{ key: string; env: string; namespace: string; service: string; interval: number }> }>(
       `${API_BASE}/refresh/subscriptions`
     ),
+
+  // Field extraction
+  getExtractedFields: (params: {
+    env: string;
+    namespace?: string;
+    service?: string;
+    pod?: string;
+    limit?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    searchParams.set('env', params.env);
+    if (params.namespace) searchParams.set('namespace', params.namespace);
+    if (params.service) searchParams.set('service', params.service);
+    if (params.pod) searchParams.set('pod', params.pod);
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    return fetchJson<{ fields: Record<string, Record<string, number>> }>(
+      `${API_BASE}/logs/fields?${searchParams}`
+    );
+  },
 };

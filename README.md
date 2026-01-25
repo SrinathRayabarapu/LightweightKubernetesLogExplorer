@@ -21,6 +21,7 @@ A lightweight, local web application for exploring Kubernetes logs across multip
   - [Basic Workflow](#basic-workflow)
   - [Viewing Logs](#viewing-logs)
   - [Searching Logs](#searching-logs)
+  - [Field Extraction & Filtering](#field-extraction--filtering)
   - [Time Navigation](#time-navigation)
   - [Log Filtering](#log-filtering)
   - [Auto-Refresh](#auto-refresh)
@@ -84,6 +85,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 |---------|-------------|
 | **Full-Text Search** | FTS5-powered instant search across all log messages |
 | **Splunk-Style AND/OR/NOT** | Combine terms: `error AND timeout`, `error OR warning`, `error NOT debug` |
+| **Field Extraction & Filtering** | Auto-extracts key=value pairs from logs, click to filter |
 | **Text Selection Search** | Select text in logs → click "Add to Search" to append to query |
 | **Search History** | Recent searches stored and accessible via dropdown (last 10) |
 | **Search Highlighting** | All matched terms highlighted in yellow |
@@ -98,7 +100,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | Feature | Description |
 |---------|-------------|
 | **22 Professional Themes** | 11 dark + 11 light themes including Bootstrap-inspired options |
-| **Keyboard Shortcuts** | `/` search, `R` refresh, `T` theme, `F` filters, `?` help |
+| **Keyboard Shortcuts** | `/` search, `R` refresh, `T` theme, `F` filters, `E` fields, `?` help |
 | **Bootstrap CSS** | Standardized styling for consistent fonts and colors |
 | **Auto-Hiding Headers** | Table headers hide when scrolling down, reappear at top |
 | **Severity Highlighting** | Error/Warning/Exception logs highlighted with color-coded backgrounds |
@@ -717,6 +719,34 @@ Get-Content logs\frontend.log -Wait
 - **Text Selection**: Select any text in logs → popup appears → click "Add to Search"
 - **Persistence**: Search re-applied automatically when changing pods
 
+### Field Extraction & Filtering
+
+The Fields Panel (left sidebar) automatically extracts structured data from your logs:
+
+**Extracted Fields:**
+- `key=value` pairs (e.g., `level=INFO`, `status=200`, `method=POST`)
+- Log levels in brackets: `[INFO]`, `[ERROR]`, `[WARN]`
+- HTTP methods: `GET`, `POST`, `PUT`, `DELETE`
+- HTTP status codes: `200`, `404`, `500`
+- Common JSON fields: `level`, `severity`, `status`, `method`
+
+**How to Use:**
+1. Select a pod to view logs
+2. Fields panel appears on the left with extracted values
+3. Click ▶ to expand a field and see all values with counts
+4. Click any value to add it to your search filter
+5. Active filters shown at top with "×" to remove
+6. Use `E` key to toggle fields panel visibility
+
+**Example:**
+```
+If your logs contain: level=ERROR method=POST status=500
+Fields panel shows:
+  level:  ERROR (45), INFO (320), WARN (12)
+  method: POST (100), GET (250)
+  status: 500 (45), 200 (300), 404 (20)
+```
+
 ### Time Presets & Navigation
 
 **Quick Time Presets** (above log table):
@@ -739,6 +769,7 @@ Get-Content logs\frontend.log -Wait
 | `R` | Refresh logs |
 | `T` | Toggle dark/light theme |
 | `F` | Toggle filters panel |
+| `E` | Toggle fields panel |
 | `?` | Show keyboard shortcuts help |
 
 ### Log Filtering

@@ -529,3 +529,155 @@ async def clear_logs_for_pod(env: str, namespace: str, pod: str) -> int:
     await commit()
     
     return len(log_ids)
+
+
+async def extract_fields(
+    env: str,
+    namespace: Optional[str] = None,
+    service: Optional[str] = None,
+    pod: Optional[str] = None,
+    limit: int = 5000,
+) -> dict:
+    """
+    Extract fields from log messages for filtering.
+    
+    Parses log messages to find:
+    - key=value pairs (e.g., level=INFO, status=200)
+    - Log levels in brackets like [INFO], [ERROR]
+    - HTTP methods (GET, POST, PUT, DELETE, PATCH)
+    - HTTP status codes (200, 404, 500, etc.)
+    - JSON field values for common fields
+    
+    Args:
+        env: Environment name
+        namespace: Optional namespace filter
+        service: Optional service filter
+        pod: Optional pod filter
+        limit: Max logs to analyze (default 5000)
+        
+    Returns:
+        Dictionary with field names as keys and dict of {value: count} as values
+    """
+    import re
+    import json
+    
+    # Build query with filters
+    conditions = ["env = ?"]
+    params: list = [env]
+    
+    if namespace:
+        conditions.append("namespace = ?")
+        params.append(namespace)
+    
+    if service:
+        conditions.append("service = ?")
+        params.append(service)
+    
+    if pod:
+        conditions.append("pod = ?")
+        params.append(pod)
+    
+    where_clause = " AND ".join(conditions)
+    
+    # Fetch log messages
+    params.append(limit)
+    rows = await fetch_all(
+        f"""
+        SELECT message FROM logs
+        WHERE {where_clause}
+        ORDER BY timestamp DESC
+        LIMIT ?
+        """,
+        tuple(params)
+    )
+    
+    # Initialize field counters
+    fields: dict[str, dict[str, int]] = {}
+    
+    # Patterns for extraction
+    # key=value pattern (handles quoted values too)
+    kv_pattern = re.compile(r'(\w+)=(?:"([^"]+)"|(\S+))')
+    # Log level in brackets: [INFO], [ERROR], [WARN], [DEBUG], [TRACE]
+    level_bracket_pattern = re.compile(r'\[(INFO|ERROR|WARN|WARNING|DEBUG|TRACE|FATAL|CRITICAL)\]', re.IGNORECASE)
+    # HTTP methods
+    http_method_pattern = re.compile(r'\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b')
+    # HTTP status codes (3-digit numbers that look like status codes)
+    http_status_pattern = re.compile(r'\b(status[=:]?\s*|HTTP[/\s]+\d\.\d\s+)?([1-5]\d{2})\b')
+    
+    def add_field_value(field: str, value: str):
+        """Add a field value to the counters."""
+        if not value or len(value) > 100:  # Skip empty or very long values
+            return
+        value = value.strip()
+        if not value:
+            return
+        if field not in fields:
+            fields[field] = {}
+        fields[field][value] = fields[field].get(value, 0) + 1
+    
+    for row in rows:
+        message = row["message"]
+        if not message:
+            continue
+        
+        # Try to parse as JSON first
+        if message.strip().startswith('{'):
+            try:
+                json_data = json.loads(message)
+                if isinstance(json_data, dict):
+                    # Extract common JSON fields
+                    for json_field in ['level', 'severity', 'status', 'method', 'path', 'code', 'type', 'action', 'event']:
+                        if json_field in json_data:
+                            value = str(json_data[json_field])
+                            add_field_value(json_field, value)
+                    continue  # Skip other parsing for JSON logs
+            except (json.JSONDecodeError, ValueError):
+                pass  # Not valid JSON, continue with text parsing
+        
+        # Extract key=value pairs
+        for match in kv_pattern.finditer(message):
+            key = match.group(1).lower()
+            value = match.group(2) or match.group(3)  # Quoted or unquoted value
+            # Skip very common/noisy fields
+            if key in ('t', 'ts', 'time', 'timestamp', 'date', 'msg', 'message', 'id', 'uuid', 'trace_id', 'span_id', 'request_id'):
+                continue
+            add_field_value(key, value)
+        
+        # Extract log levels from brackets
+        for match in level_bracket_pattern.finditer(message):
+            level = match.group(1).upper()
+            if level == 'WARNING':
+                level = 'WARN'
+            add_field_value('level', level)
+        
+        # Extract HTTP methods
+        for match in http_method_pattern.finditer(message):
+            add_field_value('http_method', match.group(1))
+        
+        # Extract HTTP status codes (be careful to avoid false positives)
+        for match in http_status_pattern.finditer(message):
+            status = match.group(2)
+            # Only include if it looks like a real status code context
+            if match.group(1) or message.count(status) == 1:
+                add_field_value('http_status', status)
+    
+    # Filter out fields with too many unique values (likely not useful for filtering)
+    # and sort values by count
+    result = {}
+    for field, values in fields.items():
+        if len(values) > 50:  # Skip fields with too many unique values
+            continue
+        if sum(values.values()) < 2:  # Skip fields that appear only once
+            continue
+        # Sort by count descending, then by value
+        sorted_values = dict(sorted(values.items(), key=lambda x: (-x[1], x[0])))
+        # Limit to top 20 values per field
+        result[field] = dict(list(sorted_values.items())[:20])
+    
+    # Sort fields by total count (most common first)
+    sorted_result = dict(sorted(
+        result.items(),
+        key=lambda x: (-sum(x[1].values()), x[0])
+    ))
+    
+    return sorted_result
