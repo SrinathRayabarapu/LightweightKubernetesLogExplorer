@@ -114,6 +114,38 @@ function parseTerms(input: string): string[] {
 }
 
 /**
+ * Check if a term needs quoting for FTS5.
+ * Terms need quoting if they contain:
+ * - Spaces (multi-word phrases)
+ * - FTS5 special characters that could be misinterpreted
+ */
+function needsQuoting(term: string): boolean {
+  // Quote if contains spaces (phrase)
+  if (term.includes(' ')) {
+    return true;
+  }
+  // Quote if contains FTS5 special characters
+  // These include: + - * ^ " ( ) : .
+  const specialChars = /[+\-*^"():\.]/;
+  return specialChars.test(term);
+}
+
+/**
+ * Escape a term for FTS5 query.
+ * If the term needs quoting (has spaces or special chars), wrap in quotes.
+ * Otherwise, use as-is for better matching.
+ */
+function escapeFts5Term(term: string): string {
+  if (needsQuoting(term)) {
+    // Escape double quotes in the term by doubling them
+    const escaped = term.replace(/"/g, '""');
+    return `"${escaped}"`;
+  }
+  // Single word without special chars - use as-is
+  return term;
+}
+
+/**
  * Convert parsed query to FTS5 search query.
  * For AND: all terms must match (using FTS5 AND operator)
  * For OR: any term must match (using FTS5 OR operator)
@@ -123,12 +155,8 @@ export function toFts5Query(parsed: ParsedSearchQuery): string {
     return '';
   }
 
-  // Escape each term and wrap in quotes for FTS5
-  const escapedTerms = parsed.terms.map(term => {
-    // Escape double quotes in the term
-    const escaped = term.replace(/"/g, '""');
-    return `"${escaped}"`;
-  });
+  // Escape each term appropriately for FTS5
+  const escapedTerms = parsed.terms.map(escapeFts5Term);
 
   if (parsed.type === 'OR') {
     // OR: term1 OR term2 OR term3

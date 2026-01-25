@@ -105,6 +105,12 @@ async def search_logs(
     """
     Search logs using full-text search.
     
+    Supports:
+    - Simple queries: "error" - matches logs containing "error"
+    - AND queries: term1 AND term2 - both terms must be present
+    - OR queries: term1 OR term2 - either term can be present
+    - Phrase queries: "error occurred" - exact phrase match
+    
     Returns:
         Tuple of (list of matching logs, total count)
     """
@@ -134,6 +140,18 @@ async def search_logs(
     
     where_clause = " AND ".join(conditions)
     
+    # Handle FTS query: if it contains AND/OR operators, use as-is (already formatted)
+    # Otherwise, escape it for simple queries
+    if ' OR ' in query or ' AND ' in query:
+        # Query already contains AND/OR operators - use as-is
+        # The frontend has already formatted this correctly
+        fts_query = query
+        print(f"[Search] Using AND/OR query: {fts_query}")
+    else:
+        # Simple query - escape it
+        fts_query = escape_fts5_query(query)
+        print(f"[Search] Simple query escaped to: {fts_query}")
+    
     # FTS search with JOIN (newest first, with id ASC to preserve kubectl order within same timestamp)
     search_query = f"""
         SELECT logs.id, logs.timestamp, logs.env, logs.namespace, 
@@ -145,19 +163,19 @@ async def search_logs(
         LIMIT ?
     """
     
-    # Handle FTS query: if it contains AND/OR operators, use as-is (already formatted)
-    # Otherwise, escape it for simple queries
-    if ' OR ' in query.upper() or ' AND ' in query.upper():
-        # Query already contains AND/OR operators - use as-is
-        fts_query = query
-    else:
-        # Simple query - escape it
-        fts_query = escape_fts5_query(query)
-    
-    rows = await fetch_all(
-        search_query,
-        (fts_query, *params, limit)
-    )
+    try:
+        rows = await fetch_all(
+            search_query,
+            (fts_query, *params, limit)
+        )
+    except Exception as e:
+        print(f"[Search] FTS5 query error: {e}")
+        print(f"[Search] Query was: {fts_query}")
+        # If FTS5 fails, try a fallback LIKE-based search
+        print("[Search] Falling back to LIKE-based search")
+        return await _search_logs_fallback(
+            env, query, start_time, end_time, namespace, service, pod, limit
+        )
     
     logs = [
         LogEntry(
@@ -180,9 +198,112 @@ async def search_logs(
         JOIN logs_fts ON logs.id = logs_fts.rowid
         WHERE logs_fts MATCH ? AND {where_clause}
     """
-    count_row = await fetch_one(count_query, (fts_query, *params))
+    try:
+        count_row = await fetch_one(count_query, (fts_query, *params))
+        total = count_row["count"] if count_row else 0
+    except Exception:
+        total = len(logs)
+    
+    print(f"[Search] Found {total} results")
+    return logs, total
+
+
+async def _search_logs_fallback(
+    env: str,
+    query: str,
+    start_time: Optional[datetime] = None,
+    end_time: Optional[datetime] = None,
+    namespace: Optional[str] = None,
+    service: Optional[str] = None,
+    pod: Optional[str] = None,
+    limit: int = 100,
+) -> tuple[list[LogEntry], int]:
+    """
+    Fallback search using LIKE when FTS5 fails.
+    Parses AND/OR logic and applies LIKE conditions.
+    """
+    # Build base conditions
+    conditions = ["env = ?"]
+    params = [env]
+    
+    if namespace:
+        conditions.append("namespace = ?")
+        params.append(namespace)
+    
+    if service:
+        conditions.append("service = ?")
+        params.append(service)
+    
+    if pod:
+        conditions.append("pod = ?")
+        params.append(pod)
+    
+    if start_time:
+        conditions.append("timestamp >= ?")
+        params.append(start_time.isoformat())
+    
+    if end_time:
+        conditions.append("timestamp <= ?")
+        params.append(end_time.isoformat())
+    
+    # Parse the search query for AND/OR
+    # Remove quotes around terms for LIKE search
+    clean_query = query.replace('"', '')
+    
+    if ' OR ' in clean_query:
+        # OR logic: any term must match
+        terms = [t.strip() for t in clean_query.split(' OR ') if t.strip()]
+        like_conditions = [f"message LIKE ?" for _ in terms]
+        conditions.append(f"({' OR '.join(like_conditions)})")
+        params.extend([f"%{term}%" for term in terms])
+    elif ' AND ' in clean_query:
+        # AND logic: all terms must match
+        terms = [t.strip() for t in clean_query.split(' AND ') if t.strip()]
+        for term in terms:
+            conditions.append("message LIKE ?")
+            params.append(f"%{term}%")
+    else:
+        # Simple query
+        conditions.append("message LIKE ?")
+        params.append(f"%{clean_query}%")
+    
+    where_clause = " AND ".join(conditions)
+    
+    # Get count
+    count_row = await fetch_one(
+        f"SELECT COUNT(*) as count FROM logs WHERE {where_clause}",
+        tuple(params)
+    )
     total = count_row["count"] if count_row else 0
     
+    # Get logs
+    params.append(limit)
+    rows = await fetch_all(
+        f"""
+        SELECT id, timestamp, env, namespace, service, pod, container, message
+        FROM logs
+        WHERE {where_clause}
+        ORDER BY timestamp DESC, id ASC
+        LIMIT ?
+        """,
+        tuple(params)
+    )
+    
+    logs = [
+        LogEntry(
+            id=row["id"],
+            timestamp=datetime.fromisoformat(row["timestamp"]),
+            env=row["env"],
+            namespace=row["namespace"],
+            service=row["service"],
+            pod=row["pod"],
+            container=row["container"],
+            message=row["message"],
+        )
+        for row in rows
+    ]
+    
+    print(f"[Search Fallback] Found {total} results using LIKE")
     return logs, total
 
 
