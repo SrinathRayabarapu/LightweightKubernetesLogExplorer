@@ -109,7 +109,11 @@ export function SearchableSelect({
       case 'Enter':
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
+          // Select highlighted option
           handleSelect(filteredOptions[highlightedIndex]);
+        } else if (filteredOptions.length === 1) {
+          // Auto-select if only one option matches
+          handleSelect(filteredOptions[0]);
         }
         break;
       case 'Escape':

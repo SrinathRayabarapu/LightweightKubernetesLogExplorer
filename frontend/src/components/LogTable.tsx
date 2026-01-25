@@ -767,6 +767,7 @@ ${log.message}`;
     };
   }, [searchQuery, theme.colors.searchHighlight, theme.colors.searchHighlightText]);
 
+  // Show loading state when fetching (whether or not we have logs)
   if (isLoading && logs.length === 0) {
     return (
       <div style={styles.loading}>
@@ -776,8 +777,20 @@ ${log.message}`;
     );
   }
 
-  if (!logs.length) {
+  // Show empty state only when NOT loading and no logs
+  // This prevents the momentary "No logs" flash during pod changes
+  if (!logs.length && !isLoading) {
     return <div style={styles.empty}>No logs found. Try fetching logs first.</div>;
+  }
+  
+  // If we have no logs but are loading, show loading state
+  if (!logs.length) {
+    return (
+      <div style={styles.loading}>
+        <span style={styles.spinner}>⟳</span>
+        <span>Fetching logs...</span>
+      </div>
+    );
   }
 
   return (
