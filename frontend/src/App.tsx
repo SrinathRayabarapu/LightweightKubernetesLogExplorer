@@ -12,6 +12,7 @@ import { SearchableSelect } from './components/SearchableSelect';
 import { PodSelector } from './components/PodSelector';
 import { ThemeSelector } from './components/ThemeSelector';
 import { TimePresets, getPresetIdForMinutes } from './components/TimePresets';
+import { FieldsPanel } from './components/FieldsPanel';
 import { useTheme } from './context/ThemeContext';
 import {
   useLogs,
@@ -21,6 +22,7 @@ import {
   useStorageStats,
   useServices,
   usePods,
+  useExtractedFields,
 } from './hooks/useLogs';
 import { EnvConfig } from './api/client';
 import { filterLogs, logFilterConfig } from './config/logFilters';
@@ -52,6 +54,10 @@ export default function App() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSearch, setActiveSearch] = useState('');
+
+  // Field filter state
+  const [fieldFilters, setFieldFilters] = useState<{ field: string; value: string }[]>([]);
+  const [fieldsPanelCollapsed, setFieldsPanelCollapsed] = useState(false);
 
   // Time navigation state
   const [timeWindow, setTimeWindow] = useState<{
@@ -111,7 +117,9 @@ export default function App() {
       // T - Toggle theme (dark/light)
       if (e.key === 't' || e.key === 'T') {
         // Toggle between classicDark and daylight
-        const newThemeId = theme.isDark ? 'daylight' : 'classicDark';
+        // Light themes have lighter bgPrimary (check if it starts with higher hex value)
+        const isLightTheme = ['daylight', 'arctic', 'paper', 'mint', 'rose', 'sky', 'sand', 'lavenderLight', 'flatly', 'united'].includes(theme.id);
+        const newThemeId = isLightTheme ? 'classicDark' : 'daylight';
         setTheme(newThemeId);
         return;
       }
@@ -119,6 +127,12 @@ export default function App() {
       // F - Toggle filters visibility
       if (e.key === 'f' || e.key === 'F') {
         setShowFilters(prev => !prev);
+        return;
+      }
+      
+      // E - Toggle fields panel collapsed state
+      if (e.key === 'e' || e.key === 'E') {
+        setFieldsPanelCollapsed(prev => !prev);
         return;
       }
       
@@ -131,7 +145,7 @@ export default function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedEnv, namespace, service, selectedPod, theme.isDark, setTheme]);
+  }, [selectedEnv, namespace, service, selectedPod, theme.id, setTheme]);
 
   // Queries
   const logsQuery = useLogs({
@@ -175,6 +189,15 @@ export default function App() {
   const storageStats = useStorageStats();
   const queryClient = useQueryClient();
 
+  // Extracted fields for field filtering
+  const extractedFieldsQuery = useExtractedFields({
+    env: selectedEnv,
+    namespace: namespace,
+    service: service,
+    pod: selectedPod,
+    enabled: !!selectedEnv && !!selectedPod,
+  });
+
   // Refetch pods when service changes
   useEffect(() => {
     if (selectedEnv && service) {
@@ -200,8 +223,10 @@ export default function App() {
     setOffset(0);
     setViewMode('logs');
     setActiveSearch('');
+    setSearchQuery('');
     setTimeWindow(null);
     setActiveTimePreset(null);
+    setFieldFilters([]);
   }, []);
 
   // Search handler
@@ -275,6 +300,85 @@ export default function App() {
   const handleClearTimePreset = useCallback(() => {
     setTimeWindow(null);
     setActiveTimePreset(null);
+    setViewMode('logs');
+    setOffset(0);
+  }, []);
+
+  // Field filter handlers
+  const handleFieldClick = useCallback((field: string, value: string) => {
+    // Check if this exact filter is already active (toggle off)
+    const exactMatch = fieldFilters.some(f => f.field === field && f.value === value);
+    if (exactMatch) {
+      // Toggle off - remove this filter
+      const newFilters = fieldFilters.filter(f => !(f.field === field && f.value === value));
+      setFieldFilters(newFilters);
+      
+      // Rebuild search query from remaining filters
+      const filterTerms = newFilters.map(f => `${f.field}=${f.value}`);
+      const newQuery = filterTerms.join(' AND ');
+      
+      setSearchQuery(newQuery);
+      if (newQuery) {
+        setActiveSearch(newQuery);
+        setViewMode('search');
+      } else {
+        setActiveSearch('');
+        setViewMode('logs');
+      }
+      setOffset(0);
+      return;
+    }
+    
+    // Check if there's already a filter for this field (replace it - single selection per field)
+    const existingFieldFilter = fieldFilters.find(f => f.field === field);
+    let newFilters: { field: string; value: string }[];
+    
+    if (existingFieldFilter) {
+      // Replace the existing value for this field
+      newFilters = fieldFilters.map(f => 
+        f.field === field ? { field, value } : f
+      );
+    } else {
+      // Add new field filter
+      newFilters = [...fieldFilters, { field, value }];
+    }
+    
+    setFieldFilters(newFilters);
+    
+    // Rebuild search query from all filters
+    const filterTerms = newFilters.map(f => `${f.field}=${f.value}`);
+    const newQuery = filterTerms.join(' AND ');
+    
+    setSearchQuery(newQuery);
+    setActiveSearch(newQuery);
+    setViewMode('search');
+    setOffset(0);
+  }, [fieldFilters]);
+
+  const handleClearFieldFilter = useCallback((field: string, value: string) => {
+    // Remove the filter from fieldFilters
+    const newFilters = fieldFilters.filter(f => !(f.field === field && f.value === value));
+    setFieldFilters(newFilters);
+    
+    // Rebuild search query from remaining filters
+    const filterTerms = newFilters.map(f => `${f.field}=${f.value}`);
+    const newQuery = filterTerms.join(' AND ');
+    
+    setSearchQuery(newQuery);
+    if (newQuery) {
+      setActiveSearch(newQuery);
+      setViewMode('search');
+    } else {
+      setActiveSearch('');
+      setViewMode('logs');
+    }
+    setOffset(0);
+  }, [fieldFilters]);
+
+  const handleClearAllFieldFilters = useCallback(() => {
+    setFieldFilters([]);
+    setSearchQuery('');
+    setActiveSearch('');
     setViewMode('logs');
     setOffset(0);
   }, []);
@@ -444,6 +548,7 @@ export default function App() {
             onChange={(pod) => {
               setSelectedPod(pod);
               setOffset(0);
+              setFieldFilters([]);
             }}
             disabled={!service}
             isLoading={podsQuery.isLoading}
@@ -546,38 +651,55 @@ export default function App() {
       </div>
       )}
 
-      {/* Log Table */}
-      <main style={styles.main}>
-        {!selectedEnv ? (
-          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
-            Select an environment to view logs
-          </div>
-        ) : !service ? (
-          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
-            Select a service to view pods
-          </div>
-        ) : !selectedPod ? (
-          <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
-            Select a pod to view logs
-          </div>
-        ) : (
-          <LogTable
-            logs={logs}
-            allLogs={rawLogs}
-            total={total}
-            hasMore={hasMore}
-            isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
-            filteredCount={filteredCount}
-            filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
-            filtersEnabled={applyLogFilters}
-            onToggleFilters={() => setApplyLogFilters(!applyLogFilters)}
-            searchQuery={activeSearch}
-            onLoadMore={handleLoadMore}
-            onTimeNavigate={handleTimeNavigate}
-            onAddToSearch={handleAddToSearch}
+      {/* Main Content Area with Fields Panel */}
+      <div style={styles.mainContainer}>
+        {/* Fields Panel (Sidebar) */}
+        {selectedPod && (
+          <FieldsPanel
+            fields={extractedFieldsQuery.data?.fields || {}}
+            isLoading={extractedFieldsQuery.isLoading}
+            onFieldClick={handleFieldClick}
+            activeFilters={fieldFilters}
+            onClearFilter={handleClearFieldFilter}
+            onClearAllFilters={handleClearAllFieldFilters}
+            collapsed={fieldsPanelCollapsed}
+            onToggleCollapsed={() => setFieldsPanelCollapsed(prev => !prev)}
           />
         )}
-      </main>
+
+        {/* Log Table */}
+        <main style={styles.main}>
+          {!selectedEnv ? (
+            <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
+              Select an environment to view logs
+            </div>
+          ) : !service ? (
+            <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
+              Select a service to view pods
+            </div>
+          ) : !selectedPod ? (
+            <div style={{ ...styles.placeholder, color: theme.colors.textMuted }}>
+              Select a pod to view logs
+            </div>
+          ) : (
+            <LogTable
+              logs={logs}
+              allLogs={rawLogs}
+              total={total}
+              hasMore={hasMore}
+              isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
+              filteredCount={filteredCount}
+              filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
+              filtersEnabled={applyLogFilters}
+              onToggleFilters={() => setApplyLogFilters(!applyLogFilters)}
+              searchQuery={activeSearch}
+              onLoadMore={handleLoadMore}
+              onTimeNavigate={handleTimeNavigate}
+              onAddToSearch={handleAddToSearch}
+            />
+          )}
+        </main>
+      </div>
 
       {/* Error display */}
       {(currentQuery.error || fetchLogsMutation.error) && (
@@ -631,6 +753,7 @@ export default function App() {
                   ['R', 'Refresh logs'],
                   ['T', 'Toggle dark/light theme'],
                   ['F', 'Toggle filters panel'],
+                  ['E', 'Toggle fields panel'],
                   ['?', 'Show this help'],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom: `1px solid ${theme.colors.borderSecondary}` }}>
@@ -792,6 +915,11 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     fontSize: '14px',
     color: '#aaa',
+  },
+  mainContainer: {
+    display: 'flex',
+    flex: 1,
+    overflow: 'hidden',
   },
   main: {
     flex: 1,

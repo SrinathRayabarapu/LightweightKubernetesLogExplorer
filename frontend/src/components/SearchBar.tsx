@@ -183,7 +183,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(function Searc
       border: `1px solid ${theme.colors.borderSecondary}`,
       borderRadius: '6px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      zIndex: 100,
+      zIndex: 1000,
       maxHeight: '300px',
       overflowY: 'auto' as const,
     },

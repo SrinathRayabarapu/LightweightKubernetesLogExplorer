@@ -86,10 +86,10 @@ When viewing search results, show surrounding log context.
 
 ---
 
-## 🚀 Phase 3: Advanced Features (Future)
+## ✅ Phase 2.5: Field Extraction (Completed)
 
 ### 1. Field Extraction & Filtering
-**Priority:** High | **Effort:** High
+**Priority:** High | **Effort:** High | **Status:** ✅ Done
 
 Auto-detect and extract fields from structured logs.
 
@@ -105,9 +105,19 @@ Auto-detect and extract fields from structured logs.
 | method | POST (300), GET (185) |
 | status | 200 (400), 500 (50), 404 (35) |
 
+**Features Implemented:**
+- Collapsible Fields Panel (left sidebar)
+- Auto-extracts key=value pairs, log levels, HTTP methods/status
+- JSON field extraction for structured logs
+- Click-to-filter: adds field=value to search
+- Active filters display with remove option
+- `E` keyboard shortcut to toggle panel
+
 ---
 
-### 2. Log Timeline / Sparkline
+## 🚀 Phase 3: Advanced Features (Future)
+
+### 1. Log Timeline / Sparkline
 **Priority:** Medium | **Effort:** High
 
 Visual timeline showing log density over time.
@@ -124,7 +134,7 @@ Visual timeline showing log density over time.
 
 ---
 
-### 3. Live Tail Mode
+### 2. Live Tail Mode
 **Priority:** Medium | **Effort:** High
 
 Real-time streaming of new logs (like `tail -f`).
@@ -139,7 +149,7 @@ Real-time streaming of new logs (like `tail -f`).
 
 ---
 
-### 4. Multi-Pod Comparison
+### 3. Multi-Pod Comparison
 **Priority:** Low | **Effort:** High
 
 View logs from multiple pods side-by-side.
@@ -152,7 +162,7 @@ View logs from multiple pods side-by-side.
 
 ---
 
-### 5. Log Patterns / Clustering
+### 4. Log Patterns / Clustering
 **Priority:** Low | **Effort:** Very High
 
 Automatically group similar log messages.
@@ -166,7 +176,7 @@ Pattern: "Connection to {host} failed after {n} retries"
 
 ---
 
-### 6. Regex Search
+### 5. Regex Search
 **Priority:** Medium | **Effort:** Medium
 
 Full regex pattern support in search.
@@ -186,7 +196,7 @@ Full regex pattern support in search.
 HIGH IMPACT
     │
     │  ┌─────────────────────┐   ┌─────────────────────┐
-    │  │ ✅ NOT Operator     │   │ Field Extraction    │
+    │  │ ✅ NOT Operator     │   │ ✅ Field Extraction │
     │  │ ✅ Time Presets     │   │ Timeline Sparkline  │
     │  │ ✅ Search History   │   │                     │
     │  │ Wildcard Search     │   │                     │
@@ -216,10 +226,9 @@ LOW IMPACT
 
 ### Future (Phase 3)
 5. **Log Context Expansion** - Improves debugging workflow
-6. **Field Extraction** - Major feature, high value
-7. **Timeline Sparkline** - Visual insight into log patterns
-8. **Regex Search** - Power user feature
-9. **Live Tail** - Real-time monitoring capability
+6. **Timeline Sparkline** - Visual insight into log patterns
+7. **Regex Search** - Power user feature
+8. **Live Tail** - Real-time monitoring capability
 
 ---
 
@@ -241,6 +250,7 @@ Want to help implement a feature? Here's how:
 | 1.0 | Core functionality, themes, search, time navigation |
 | 1.1 | AND/OR search, text selection, Excel export, Ask AI |
 | 1.2 | NOT operator, search history, time presets, keyboard shortcuts |
+| 1.3 | Field extraction & filtering, fields panel sidebar |
 
 ---
 

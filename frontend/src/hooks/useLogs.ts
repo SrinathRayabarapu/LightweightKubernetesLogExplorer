@@ -114,9 +114,11 @@ export function useFetchLogs() {
       // Invalidate and refetch logs queries immediately to show new data
       queryClient.invalidateQueries({ queryKey: ['logs'] });
       queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['extracted-fields'] });
       // Force refetch all log queries
       queryClient.refetchQueries({ queryKey: ['logs'] });
       queryClient.refetchQueries({ queryKey: ['search'] });
+      queryClient.refetchQueries({ queryKey: ['extracted-fields'] });
     },
   });
 }
@@ -157,5 +159,22 @@ export function useSubscriptions() {
   return useQuery({
     queryKey: ['subscriptions'],
     queryFn: api.getSubscriptions,
+  });
+}
+
+export function useExtractedFields(params: {
+  env: string;
+  namespace?: string;
+  service?: string;
+  pod?: string;
+  limit?: number;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['extracted-fields', params.env, params.namespace, params.service, params.pod],
+    queryFn: () => api.getExtractedFields(params),
+    enabled: params.enabled !== false && !!params.env && !!params.pod,
+    staleTime: 60000, // Cache for 1 minute (fields don't change often)
+    refetchOnWindowFocus: false,
   });
 }

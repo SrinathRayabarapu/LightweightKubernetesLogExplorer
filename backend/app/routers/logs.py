@@ -11,6 +11,7 @@ from ..services.log_store import (
     get_logs,
     search_logs,
     get_logs_by_time_window,
+    extract_fields,
 )
 from ..services.log_collector import collect_logs
 from ..services.retention import enforce_retention, get_storage_stats
@@ -184,3 +185,34 @@ async def storage_stats():
 async def trigger_retention():
     """Manually trigger retention enforcement."""
     return await enforce_retention()
+
+
+@router.get("/fields")
+async def get_extracted_fields(
+    env: str = Query(..., description="Environment name"),
+    namespace: Optional[str] = Query(None, description="Namespace filter"),
+    service: Optional[str] = Query(None, description="Service filter"),
+    pod: Optional[str] = Query(None, description="Pod filter"),
+    limit: int = Query(5000, ge=100, le=10000, description="Max logs to analyze"),
+):
+    """
+    Extract fields from log messages for filtering.
+    
+    Parses logs to find key=value pairs, log levels, HTTP methods/status codes,
+    and common JSON fields. Returns field names with their values and counts.
+    """
+    # Validate environment
+    try:
+        get_env_config(env)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    fields = await extract_fields(
+        env=env,
+        namespace=namespace,
+        service=service,
+        pod=pod,
+        limit=limit,
+    )
+    
+    return {"fields": fields}
