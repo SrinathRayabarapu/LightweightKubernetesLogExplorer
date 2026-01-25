@@ -13,6 +13,8 @@ interface FieldsPanelProps {
   activeFilters: { field: string; value: string }[];
   onClearFilter: (field: string, value: string) => void;
   onClearAllFilters: () => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 export function FieldsPanel({
@@ -22,10 +24,11 @@ export function FieldsPanel({
   activeFilters,
   onClearFilter,
   onClearAllFilters,
+  collapsed,
+  onToggleCollapsed,
 }: FieldsPanelProps) {
   const { theme } = useTheme();
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
-  const [collapsed, setCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const toggleField = (field: string) => {
@@ -281,8 +284,8 @@ export function FieldsPanel({
         <div style={styles.header}>
           <button
             style={styles.collapseButton}
-            onClick={() => setCollapsed(false)}
-            title="Expand fields panel"
+            onClick={onToggleCollapsed}
+            title="Expand fields panel (E)"
           >
             »
           </button>
@@ -302,8 +305,8 @@ export function FieldsPanel({
         <span style={styles.headerTitle}>Fields</span>
         <button
           style={styles.collapseButton}
-          onClick={() => setCollapsed(true)}
-          title="Collapse fields panel"
+          onClick={onToggleCollapsed}
+          title="Collapse fields panel (E)"
         >
           «
         </button>

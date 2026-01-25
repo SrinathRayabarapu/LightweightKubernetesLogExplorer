@@ -57,7 +57,7 @@ export default function App() {
 
   // Field filter state
   const [fieldFilters, setFieldFilters] = useState<{ field: string; value: string }[]>([]);
-  const [showFieldsPanel, setShowFieldsPanel] = useState(true);
+  const [fieldsPanelCollapsed, setFieldsPanelCollapsed] = useState(false);
 
   // Time navigation state
   const [timeWindow, setTimeWindow] = useState<{
@@ -130,9 +130,9 @@ export default function App() {
         return;
       }
       
-      // E - Toggle fields panel
+      // E - Toggle fields panel collapsed state
       if (e.key === 'e' || e.key === 'E') {
-        setShowFieldsPanel(prev => !prev);
+        setFieldsPanelCollapsed(prev => !prev);
         return;
       }
       
@@ -654,7 +654,7 @@ export default function App() {
       {/* Main Content Area with Fields Panel */}
       <div style={styles.mainContainer}>
         {/* Fields Panel (Sidebar) */}
-        {selectedPod && showFieldsPanel && (
+        {selectedPod && (
           <FieldsPanel
             fields={extractedFieldsQuery.data?.fields || {}}
             isLoading={extractedFieldsQuery.isLoading}
@@ -662,6 +662,8 @@ export default function App() {
             activeFilters={fieldFilters}
             onClearFilter={handleClearFieldFilter}
             onClearAllFilters={handleClearAllFieldFilters}
+            collapsed={fieldsPanelCollapsed}
+            onToggleCollapsed={() => setFieldsPanelCollapsed(prev => !prev)}
           />
         )}
 
