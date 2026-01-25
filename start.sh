@@ -54,6 +54,9 @@ fi
 echo -e "${GREEN}✓ All prerequisites found${NC}"
 echo ""
 
+# Create logs directory if it doesn't exist
+mkdir -p "$SCRIPT_DIR/logs"
+
 # Start Backend
 echo "Starting Backend Server..."
 cd "$SCRIPT_DIR/backend"
@@ -114,9 +117,6 @@ fi
 echo -e "${GREEN}✓ Frontend started (PID: $FRONTEND_PID)${NC}"
 echo "   Logs: logs/frontend.log"
 echo ""
-
-# Create logs directory if it doesn't exist
-mkdir -p "$SCRIPT_DIR/logs"
 
 # Save both PIDs
 echo "$BACKEND_PID $FRONTEND_PID" > "$PID_FILE"
