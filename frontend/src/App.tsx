@@ -5,7 +5,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EnvSelector } from './components/EnvSelector';
-import { SearchBar, HighlightedQuery } from './components/SearchBar';
+import { SearchBar } from './components/SearchBar';
 import { LogTable } from './components/LogTable';
 import { RefreshIndicator } from './components/RefreshIndicator';
 import { SearchableSelect } from './components/SearchableSelect';
@@ -375,22 +375,14 @@ export default function App() {
           )}
         </div>
 
-        {/* View mode indicator */}
-        {viewMode !== 'logs' && (
+        {/* Time window indicator - only shown for time-based navigation */}
+        {viewMode === 'time-window' && timeWindow && (
           <div style={{
             ...styles.viewIndicator,
             backgroundColor: theme.colors.bgHover,
             color: theme.colors.textSecondary,
           }}>
-            {viewMode === 'search' && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                Showing search results for: 
-                <strong style={{ color: theme.colors.accentPrimary }}>
-                  "<HighlightedQuery query={activeSearch} highlightColor={theme.colors.accentSecondary || '#6366f1'} />"
-                </strong>
-              </span>
-            )}
-            {viewMode === 'time-window' && timeWindow && (() => {
+            {(() => {
               const baseTime = new Date(timeWindow.timestamp);
               const startTime = new Date(baseTime.getTime() - timeWindow.minutes * 60 * 1000);
               const endTime = new Date(baseTime.getTime() + timeWindow.minutes * 60 * 1000);
