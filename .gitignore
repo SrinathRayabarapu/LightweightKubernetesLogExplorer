@@ -95,3 +95,7 @@ frontend/.vite/
 
 # TypeScript
 *.tsbuildinfo
+
+# Windows setup scripts (shared directly, not committed)
+setup-kubectl-contexts.ps1
+verify-setup.ps1
