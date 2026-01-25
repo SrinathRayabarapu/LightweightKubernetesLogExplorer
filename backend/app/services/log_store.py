@@ -594,15 +594,23 @@ async def extract_fields(
     # Initialize field counters
     fields: dict[str, dict[str, int]] = {}
     
+    # ANSI escape code pattern (to strip color codes)
+    ansi_pattern = re.compile(r'\x1b\[[0-9;]*m|\[\d+m')
+    
     # Patterns for extraction
     # key=value pattern (handles quoted values too)
     kv_pattern = re.compile(r'(\w+)=(?:"([^"]+)"|(\S+))')
+    # JSON "key": "value" pattern (for JSON logs)
+    json_kv_pattern = re.compile(r'"(\w+)":\s*"([^"]*)"')
     # Log level in brackets: [INFO], [ERROR], [WARN], [DEBUG], [TRACE]
     level_bracket_pattern = re.compile(r'\[(INFO|ERROR|WARN|WARNING|DEBUG|TRACE|FATAL|CRITICAL)\]', re.IGNORECASE)
     # HTTP methods
     http_method_pattern = re.compile(r'\b(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b')
     # HTTP status codes (3-digit numbers that look like status codes)
     http_status_pattern = re.compile(r'\b(status[=:]?\s*|HTTP[/\s]+\d\.\d\s+)?([1-5]\d{2})\b')
+    
+    # Fields to extract from JSON logs
+    json_fields_to_extract = ['level', 'severity', 'status', 'method', 'path', 'code', 'type', 'action', 'event', 'class', 'application']
     
     def add_field_value(field: str, value: str):
         """Add a field value to the counters."""
@@ -620,22 +628,57 @@ async def extract_fields(
         if not message:
             continue
         
-        # Try to parse as JSON first
-        if message.strip().startswith('{'):
-            try:
-                json_data = json.loads(message)
-                if isinstance(json_data, dict):
-                    # Extract common JSON fields
-                    for json_field in ['level', 'severity', 'status', 'method', 'path', 'code', 'type', 'action', 'event']:
-                        if json_field in json_data:
-                            value = str(json_data[json_field])
-                            add_field_value(json_field, value)
-                    continue  # Skip other parsing for JSON logs
-            except (json.JSONDecodeError, ValueError):
-                pass  # Not valid JSON, continue with text parsing
+        # Strip ANSI color codes
+        clean_message = ansi_pattern.sub('', message)
         
-        # Extract key=value pairs
-        for match in kv_pattern.finditer(message):
+        # Try to find and parse JSON anywhere in the message
+        json_found = False
+        json_start = clean_message.find('{')
+        if json_start != -1:
+            # Try to extract JSON from the message
+            json_text = clean_message[json_start:]
+            # Find matching closing brace
+            brace_count = 0
+            json_end = -1
+            for i, c in enumerate(json_text):
+                if c == '{':
+                    brace_count += 1
+                elif c == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        json_end = i + 1
+                        break
+            
+            if json_end > 0:
+                try:
+                    json_data = json.loads(json_text[:json_end])
+                    if isinstance(json_data, dict):
+                        json_found = True
+                        # Extract common JSON fields
+                        for json_field in json_fields_to_extract:
+                            if json_field in json_data:
+                                value = str(json_data[json_field])
+                                # Shorten class names to just the class (not full package)
+                                if json_field == 'class' and '.' in value:
+                                    value = value.split('.')[-1]
+                                add_field_value(json_field, value)
+                except (json.JSONDecodeError, ValueError):
+                    pass  # Not valid JSON
+        
+        # If no valid JSON found, try regex-based JSON key:value extraction
+        if not json_found and '"' in clean_message:
+            for match in json_kv_pattern.finditer(clean_message):
+                key = match.group(1).lower()
+                value = match.group(2)
+                # Only extract specific fields we care about
+                if key in json_fields_to_extract:
+                    # Shorten class names
+                    if key == 'class' and '.' in value:
+                        value = value.split('.')[-1]
+                    add_field_value(key, value)
+        
+        # Extract key=value pairs (for non-JSON logs)
+        for match in kv_pattern.finditer(clean_message):
             key = match.group(1).lower()
             value = match.group(2) or match.group(3)  # Quoted or unquoted value
             # Skip very common/noisy fields
