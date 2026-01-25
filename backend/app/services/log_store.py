@@ -103,7 +103,7 @@ async def search_logs(
     limit: int = 100,
 ) -> tuple[list[LogEntry], int]:
     """
-    Search logs using full-text search.
+    Search logs using full-text search or LIKE-based search.
     
     Supports:
     - Simple queries: "error" - matches logs containing "error"
@@ -111,8 +111,41 @@ async def search_logs(
     - OR queries: term1 OR term2 - either term can be present
     - Phrase queries: "error occurred" - exact phrase match
     
+    For AND/OR queries, uses LIKE-based search for 100% reliability.
+    For simple queries, uses FTS5 for performance.
+    
     Returns:
         Tuple of (list of matching logs, total count)
+    """
+    print(f"[Search] Received query: {query}")
+    
+    # For AND/OR queries, use LIKE-based search for guaranteed reliability
+    # FTS5's boolean operators can be unreliable with certain tokenizations
+    if ' OR ' in query or ' AND ' in query:
+        print(f"[Search] Detected AND/OR query, using LIKE-based search")
+        return await _search_logs_like(
+            env, query, start_time, end_time, namespace, service, pod, limit
+        )
+    
+    # For simple queries, use FTS5 for performance
+    return await _search_logs_fts5(
+        env, query, start_time, end_time, namespace, service, pod, limit
+    )
+
+
+async def _search_logs_fts5(
+    env: str,
+    query: str,
+    start_time: Optional[datetime] = None,
+    end_time: Optional[datetime] = None,
+    namespace: Optional[str] = None,
+    service: Optional[str] = None,
+    pod: Optional[str] = None,
+    limit: int = 100,
+) -> tuple[list[LogEntry], int]:
+    """
+    Search logs using FTS5 full-text search.
+    Used for simple single-term queries.
     """
     # Build conditions
     conditions = ["logs.env = ?"]
@@ -140,17 +173,9 @@ async def search_logs(
     
     where_clause = " AND ".join(conditions)
     
-    # Handle FTS query: if it contains AND/OR operators, use as-is (already formatted)
-    # Otherwise, escape it for simple queries
-    if ' OR ' in query or ' AND ' in query:
-        # Query already contains AND/OR operators - use as-is
-        # The frontend has already formatted this correctly
-        fts_query = query
-        print(f"[Search] Using AND/OR query: {fts_query}")
-    else:
-        # Simple query - escape it
-        fts_query = escape_fts5_query(query)
-        print(f"[Search] Simple query escaped to: {fts_query}")
+    # Escape the query for FTS5
+    fts_query = escape_fts5_query(query)
+    print(f"[Search FTS5] Query: {fts_query}")
     
     # FTS search with JOIN (newest first, with id ASC to preserve kubectl order within same timestamp)
     search_query = f"""
@@ -169,11 +194,8 @@ async def search_logs(
             (fts_query, *params, limit)
         )
     except Exception as e:
-        print(f"[Search] FTS5 query error: {e}")
-        print(f"[Search] Query was: {fts_query}")
-        # If FTS5 fails, try a fallback LIKE-based search
-        print("[Search] Falling back to LIKE-based search")
-        return await _search_logs_fallback(
+        print(f"[Search FTS5] Error: {e}, falling back to LIKE search")
+        return await _search_logs_like(
             env, query, start_time, end_time, namespace, service, pod, limit
         )
     
@@ -204,11 +226,11 @@ async def search_logs(
     except Exception:
         total = len(logs)
     
-    print(f"[Search] Found {total} results")
+    print(f"[Search FTS5] Found {total} results")
     return logs, total
 
 
-async def _search_logs_fallback(
+async def _search_logs_like(
     env: str,
     query: str,
     start_time: Optional[datetime] = None,
@@ -219,12 +241,16 @@ async def _search_logs_fallback(
     limit: int = 100,
 ) -> tuple[list[LogEntry], int]:
     """
-    Fallback search using LIKE when FTS5 fails.
-    Parses AND/OR logic and applies LIKE conditions.
+    Search logs using SQL LIKE operator.
+    Handles AND/OR logic with 100% reliability.
+    
+    This is used for:
+    - AND/OR queries (FTS5 boolean operators can be unreliable)
+    - Fallback when FTS5 fails
     """
     # Build base conditions
     conditions = ["env = ?"]
-    params = [env]
+    params: list = [env]
     
     if namespace:
         conditions.append("namespace = ?")
@@ -250,44 +276,68 @@ async def _search_logs_fallback(
     # Remove quotes around terms for LIKE search
     clean_query = query.replace('"', '')
     
+    # Parse terms, handling both AND and OR
     if ' OR ' in clean_query:
         # OR logic: any term must match
-        terms = [t.strip() for t in clean_query.split(' OR ') if t.strip()]
-        like_conditions = [f"message LIKE ?" for _ in terms]
-        conditions.append(f"({' OR '.join(like_conditions)})")
-        params.extend([f"%{term}%" for term in terms])
+        # Split by OR first
+        or_parts = clean_query.split(' OR ')
+        or_conditions = []
+        
+        for part in or_parts:
+            part = part.strip()
+            if not part:
+                continue
+            
+            # Each OR part might have AND within it
+            if ' AND ' in part:
+                and_terms = [t.strip() for t in part.split(' AND ') if t.strip()]
+                and_conditions = ["message LIKE ?" for _ in and_terms]
+                or_conditions.append(f"({' AND '.join(and_conditions)})")
+                params.extend([f"%{term}%" for term in and_terms])
+            else:
+                or_conditions.append("message LIKE ?")
+                params.append(f"%{part}%")
+        
+        if or_conditions:
+            conditions.append(f"({' OR '.join(or_conditions)})")
+        
+        print(f"[Search LIKE] OR query with {len(or_conditions)} parts")
+        
     elif ' AND ' in clean_query:
         # AND logic: all terms must match
         terms = [t.strip() for t in clean_query.split(' AND ') if t.strip()]
         for term in terms:
             conditions.append("message LIKE ?")
             params.append(f"%{term}%")
+        
+        print(f"[Search LIKE] AND query with {len(terms)} terms: {terms}")
+        
     else:
         # Simple query
         conditions.append("message LIKE ?")
         params.append(f"%{clean_query}%")
+        print(f"[Search LIKE] Simple query: {clean_query}")
     
     where_clause = " AND ".join(conditions)
     
+    # Debug: print the full query
+    print(f"[Search LIKE] WHERE clause: {where_clause}")
+    print(f"[Search LIKE] Params: {params}")
+    
     # Get count
-    count_row = await fetch_one(
-        f"SELECT COUNT(*) as count FROM logs WHERE {where_clause}",
-        tuple(params)
-    )
+    count_query = f"SELECT COUNT(*) as count FROM logs WHERE {where_clause}"
+    count_row = await fetch_one(count_query, tuple(params))
     total = count_row["count"] if count_row else 0
     
     # Get logs
-    params.append(limit)
-    rows = await fetch_all(
-        f"""
+    select_query = f"""
         SELECT id, timestamp, env, namespace, service, pod, container, message
         FROM logs
         WHERE {where_clause}
         ORDER BY timestamp DESC, id ASC
         LIMIT ?
-        """,
-        tuple(params)
-    )
+    """
+    rows = await fetch_all(select_query, tuple([*params, limit]))
     
     logs = [
         LogEntry(
@@ -303,7 +353,7 @@ async def _search_logs_fallback(
         for row in rows
     ]
     
-    print(f"[Search Fallback] Found {total} results using LIKE")
+    print(f"[Search LIKE] Found {total} results")
     return logs, total
 
 

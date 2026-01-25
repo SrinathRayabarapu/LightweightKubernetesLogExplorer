@@ -5,7 +5,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EnvSelector } from './components/EnvSelector';
-import { SearchBar } from './components/SearchBar';
+import { SearchBar, HighlightedQuery } from './components/SearchBar';
 import { LogTable } from './components/LogTable';
 import { RefreshIndicator } from './components/RefreshIndicator';
 import { SearchableSelect } from './components/SearchableSelect';
@@ -383,7 +383,12 @@ export default function App() {
             color: theme.colors.textSecondary,
           }}>
             {viewMode === 'search' && (
-              <span>Showing search results for: <strong style={{ color: theme.colors.accentPrimary }}>"{activeSearch}"</strong></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Showing search results for: 
+                <strong style={{ color: theme.colors.accentPrimary }}>
+                  "<HighlightedQuery query={activeSearch} highlightColor={theme.colors.accentSecondary || '#6366f1'} />"
+                </strong>
+              </span>
             )}
             {viewMode === 'time-window' && timeWindow && (() => {
               const baseTime = new Date(timeWindow.timestamp);
