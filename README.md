@@ -98,7 +98,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | Feature | Description |
 |---------|-------------|
 | **22 Professional Themes** | 11 dark + 11 light themes including Bootstrap-inspired options |
-| **Keyboard Shortcuts** | `/` search, `R` refresh, `T` toggle theme, `?` help |
+| **Keyboard Shortcuts** | `/` search, `R` refresh, `T` theme, `F` filters, `?` help |
 | **Bootstrap CSS** | Standardized styling for consistent fonts and colors |
 | **Auto-Hiding Headers** | Table headers hide when scrolling down, reappear at top |
 | **Severity Highlighting** | Error/Warning/Exception logs highlighted with color-coded backgrounds |
@@ -738,6 +738,7 @@ Get-Content logs\frontend.log -Wait
 | `Esc` | Close popups / blur input |
 | `R` | Refresh logs |
 | `T` | Toggle dark/light theme |
+| `F` | Toggle filters panel |
 | `?` | Show keyboard shortcuts help |
 
 ### Log Filtering

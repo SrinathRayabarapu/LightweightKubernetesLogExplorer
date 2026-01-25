@@ -116,6 +116,12 @@ export default function App() {
         return;
       }
       
+      // F - Toggle filters visibility
+      if (e.key === 'f' || e.key === 'F') {
+        setShowFilters(prev => !prev);
+        return;
+      }
+      
       // ? - Show keyboard shortcuts help
       if (e.key === '?') {
         setShowShortcuts(prev => !prev);
@@ -453,7 +459,8 @@ export default function App() {
           />
         </div>
 
-        <div style={styles.controlRow}>
+        {/* Search bar and time presets in single row */}
+        <div style={{ ...styles.controlRow, alignItems: 'center' }}>
           <SearchBar
             ref={searchBarRef}
             value={searchQuery}
@@ -474,10 +481,16 @@ export default function App() {
               Clear Filter
             </button>
           )}
-        </div>
-
-        {/* Time presets - quick time range selection */}
-        <div style={{ ...styles.controlRow, justifyContent: 'flex-start' }}>
+          
+          {/* Separator */}
+          <div style={{ 
+            width: '1px', 
+            height: '28px', 
+            backgroundColor: theme.colors.borderSecondary,
+            margin: '0 4px',
+          }} />
+          
+          {/* Time presets */}
           <TimePresets
             onSelectPreset={handleTimePresetSelect}
             activePreset={activeTimePreset}
@@ -617,6 +630,7 @@ export default function App() {
                   ['Esc', 'Close popups / blur input'],
                   ['R', 'Refresh logs'],
                   ['T', 'Toggle dark/light theme'],
+                  ['F', 'Toggle filters panel'],
                   ['?', 'Show this help'],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom: `1px solid ${theme.colors.borderSecondary}` }}>
@@ -717,50 +731,50 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
   },
   controls: {
-    padding: '18px 24px',
+    padding: '10px 24px 12px',
     backgroundColor: '#1f1f35',
     borderBottom: '1px solid #333',
     display: 'flex',
     flexDirection: 'column',
-    gap: '14px',
+    gap: '8px',
   },
   controlRow: {
     display: 'flex',
     alignItems: 'flex-end',
-    gap: '18px',
+    gap: '12px',
     flexWrap: 'wrap',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
-    minHeight: '54px',
+    gap: '3px',
+    minHeight: '46px',
   },
   label: {
-    fontSize: '13px',
+    fontSize: '11px',
     fontWeight: 600,
     color: '#888',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
   },
   select: {
-    padding: '10px 14px',
-    fontSize: '15px',
+    padding: '8px 12px',
+    fontSize: '14px',
     border: '1px solid #333',
-    borderRadius: '6px',
+    borderRadius: '5px',
     backgroundColor: '#2a2a40',
     color: '#eee',
     cursor: 'pointer',
-    minWidth: '180px',
+    minWidth: '160px',
   },
   fixedValue: {
-    padding: '10px 14px',
-    fontSize: '15px',
+    padding: '8px 12px',
+    fontSize: '14px',
     border: '1px solid #333',
-    borderRadius: '6px',
+    borderRadius: '5px',
     backgroundColor: '#1a1a2e',
     color: '#6cb6ff',
-    minWidth: '180px',
+    minWidth: '160px',
     fontFamily: 'var(--font-family-mono, monospace)',
   },
   clearButton: {
