@@ -26,6 +26,7 @@ export function FieldsPanel({
   const { theme } = useTheme();
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleField = (field: string) => {
     setExpandedFields(prev => {
@@ -221,6 +222,57 @@ export function FieldsPanel({
       textAlign: 'center',
       letterSpacing: '1px',
     },
+    searchContainer: {
+      padding: '8px 10px',
+      borderBottom: `1px solid ${colors.borderPrimary}`,
+    },
+    searchInput: {
+      width: '100%',
+      padding: '6px 10px',
+      fontSize: '11px',
+      border: `1px solid ${colors.borderSecondary}`,
+      borderRadius: '4px',
+      backgroundColor: colors.inputBg,
+      color: colors.inputText,
+      outline: 'none',
+    },
+    noResults: {
+      padding: '16px 12px',
+      textAlign: 'center',
+      color: colors.textMuted,
+      fontSize: '11px',
+    },
+  };
+
+  // Filter fields and values based on search query
+  const filterFields = () => {
+    if (!searchQuery.trim()) {
+      return Object.entries(fields);
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const filtered: [string, Record<string, number>][] = [];
+    
+    for (const [field, values] of Object.entries(fields)) {
+      // Check if field name matches
+      const fieldMatches = field.toLowerCase().includes(query) || 
+                          formatFieldName(field).toLowerCase().includes(query);
+      
+      // Check if any value matches
+      const matchingValues: Record<string, number> = {};
+      for (const [value, count] of Object.entries(values)) {
+        if (fieldMatches || value.toLowerCase().includes(query)) {
+          matchingValues[value] = count;
+        }
+      }
+      
+      // Include field if it matches or has matching values
+      if (Object.keys(matchingValues).length > 0) {
+        filtered.push([field, fieldMatches ? values : matchingValues]);
+      }
+    }
+    
+    return filtered;
   };
 
   if (collapsed) {
@@ -240,7 +292,8 @@ export function FieldsPanel({
     );
   }
 
-  const fieldEntries = Object.entries(fields);
+  const fieldEntries = filterFields();
+  const hasFields = Object.keys(fields).length > 0;
 
   return (
     <div style={styles.container}>
@@ -255,6 +308,19 @@ export function FieldsPanel({
           «
         </button>
       </div>
+
+      {/* Search Input */}
+      {hasFields && !isLoading && (
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Search fields..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={styles.searchInput}
+          />
+        </div>
+      )}
 
       {/* Active Filters */}
       {activeFilters.length > 0 && (
@@ -285,13 +351,17 @@ export function FieldsPanel({
       <div style={styles.content}>
         {isLoading ? (
           <div style={styles.loading}>Extracting fields...</div>
-        ) : fieldEntries.length === 0 ? (
+        ) : !hasFields ? (
           <div style={styles.empty}>
             No fields extracted.
             <br />
             <span style={{ fontSize: '10px', marginTop: '8px', display: 'block' }}>
               Fields are detected from key=value patterns in logs.
             </span>
+          </div>
+        ) : fieldEntries.length === 0 ? (
+          <div style={styles.noResults}>
+            No fields match "{searchQuery}"
           </div>
         ) : (
           fieldEntries.map(([field, values]) => {
