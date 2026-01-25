@@ -2,15 +2,16 @@
  * Main application component for K8s Log Explorer.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EnvSelector } from './components/EnvSelector';
-import { SearchBar } from './components/SearchBar';
+import { SearchBar, SearchBarRef } from './components/SearchBar';
 import { LogTable } from './components/LogTable';
 import { RefreshIndicator } from './components/RefreshIndicator';
 import { SearchableSelect } from './components/SearchableSelect';
 import { PodSelector } from './components/PodSelector';
 import { ThemeSelector } from './components/ThemeSelector';
+import { TimePresets, getPresetIdForMinutes } from './components/TimePresets';
 import { useTheme } from './context/ThemeContext';
 import {
   useLogs,
@@ -31,7 +32,13 @@ const FIXED_NAMESPACE = 'jio-t2r-ms';
 
 export default function App() {
   // Theme
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  
+  // Ref for search bar to focus via keyboard shortcut
+  const searchBarRef = useRef<SearchBarRef>(null);
+  
+  // State for keyboard shortcuts help
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Selection state
   const [selectedEnv, setSelectedEnv] = useState('');
@@ -52,6 +59,7 @@ export default function App() {
     minutes: number;
     direction: 'before' | 'after' | 'around';
   } | null>(null);
+  const [activeTimePreset, setActiveTimePreset] = useState<string | null>(null);
 
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('logs');
@@ -64,6 +72,60 @@ export default function App() {
   // Auto-refresh state
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(300); // 5 minutes
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      
+      // Handle Escape - works even when typing
+      if (e.key === 'Escape') {
+        setShowShortcuts(false);
+        // Blur active element to exit input
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        return;
+      }
+      
+      // Other shortcuts only work when not typing
+      if (isTyping) return;
+      
+      // / or Ctrl+K - Focus search bar
+      if (e.key === '/' || (e.ctrlKey && e.key === 'k')) {
+        e.preventDefault();
+        searchBarRef.current?.focus();
+        return;
+      }
+      
+      // R - Refresh logs
+      if (e.key === 'r' || e.key === 'R') {
+        if (selectedEnv && namespace && service && selectedPod) {
+          fetchLogsMutation.mutate({ env: selectedEnv, namespace, service, pod: selectedPod, fetchAll: true });
+        }
+        return;
+      }
+      
+      // T - Toggle theme (dark/light)
+      if (e.key === 't' || e.key === 'T') {
+        // Toggle between classicDark and daylight
+        const newThemeId = theme.isDark ? 'daylight' : 'classicDark';
+        setTheme(newThemeId);
+        return;
+      }
+      
+      // ? - Show keyboard shortcuts help
+      if (e.key === '?') {
+        setShowShortcuts(prev => !prev);
+        return;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedEnv, namespace, service, selectedPod, theme.isDark, setTheme]);
 
   // Queries
   const logsQuery = useLogs({
@@ -133,6 +195,7 @@ export default function App() {
     setViewMode('logs');
     setActiveSearch('');
     setTimeWindow(null);
+    setActiveTimePreset(null);
   }, []);
 
   // Search handler
@@ -143,12 +206,14 @@ export default function App() {
       setActiveSearch(trimmedQuery);
       setViewMode('search');
       setTimeWindow(null);
+      setActiveTimePreset(null);
       setOffset(0);
     } else {
       // If search bar is cleared, go back to default logs view
       setActiveSearch('');
       setViewMode('logs');
       setTimeWindow(null);
+      setActiveTimePreset(null);
       setOffset(0);
     }
   }, [searchQuery]);
@@ -170,6 +235,7 @@ export default function App() {
     setActiveSearch(newQuery);
     setViewMode('search');
     setTimeWindow(null);
+    setActiveTimePreset(null);
     setOffset(0);
   }, [searchQuery]);
 
@@ -181,11 +247,29 @@ export default function App() {
     setOffset(0);
   }, []);
 
-  // Time navigation handler
+  // Time navigation handler (from clicking timestamps in logs)
   const handleTimeNavigate = useCallback((timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => {
     setTimeWindow({ timestamp, minutes: windowMinutes, direction });
     setViewMode('time-window');
     setActiveSearch('');
+    setActiveTimePreset(null); // Clear preset when navigating from timestamp click
+    setOffset(0);
+  }, []);
+
+  // Time preset handler (from TimePresets component)
+  const handleTimePresetSelect = useCallback((timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => {
+    setTimeWindow({ timestamp, minutes: windowMinutes, direction });
+    setViewMode('time-window');
+    setActiveSearch('');
+    setActiveTimePreset(getPresetIdForMinutes(windowMinutes));
+    setOffset(0);
+  }, []);
+
+  // Clear time preset and return to normal logs view
+  const handleClearTimePreset = useCallback(() => {
+    setTimeWindow(null);
+    setActiveTimePreset(null);
+    setViewMode('logs');
     setOffset(0);
   }, []);
 
@@ -266,6 +350,22 @@ export default function App() {
       }}>
         <h1 style={{ ...styles.title, color: theme.colors.textAccent }}>K8S Log Explorer</h1>
         <div style={styles.headerRight}>
+          <button
+            onClick={() => setShowShortcuts(true)}
+            style={{
+              background: 'none',
+              border: `1px solid ${theme.colors.borderSecondary}`,
+              borderRadius: '6px',
+              padding: '6px 10px',
+              color: theme.colors.textMuted,
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontFamily: 'monospace',
+            }}
+            title="Keyboard shortcuts (?)"
+          >
+            ?
+          </button>
           <ThemeSelector />
           {storageStats.data && (
             <div style={{ ...styles.storage, color: theme.colors.textMuted }}>
@@ -355,6 +455,7 @@ export default function App() {
 
         <div style={styles.controlRow}>
           <SearchBar
+            ref={searchBarRef}
             value={searchQuery}
             onChange={setSearchQuery}
             onSearch={handleSearch}
@@ -375,6 +476,16 @@ export default function App() {
           )}
         </div>
 
+        {/* Time presets - quick time range selection */}
+        <div style={{ ...styles.controlRow, justifyContent: 'flex-start' }}>
+          <TimePresets
+            onSelectPreset={handleTimePresetSelect}
+            activePreset={activeTimePreset}
+            onClear={handleClearTimePreset}
+            disabled={!selectedEnv || !selectedPod}
+          />
+        </div>
+
         {/* Time window indicator - only shown for time-based navigation */}
         {viewMode === 'time-window' && timeWindow && (
           <div style={{
@@ -384,8 +495,6 @@ export default function App() {
           }}>
             {(() => {
               const baseTime = new Date(timeWindow.timestamp);
-              const startTime = new Date(baseTime.getTime() - timeWindow.minutes * 60 * 1000);
-              const endTime = new Date(baseTime.getTime() + timeWindow.minutes * 60 * 1000);
               const formatTime = (date: Date) => date.toLocaleString('en-US', {
                 month: 'short',
                 day: '2-digit',
@@ -394,11 +503,27 @@ export default function App() {
                 second: '2-digit',
                 hour12: false,
               });
+              
+              let startTime: Date, endTime: Date, description: string;
+              if (timeWindow.direction === 'before') {
+                startTime = new Date(baseTime.getTime() - timeWindow.minutes * 60 * 1000);
+                endTime = baseTime;
+                description = `Last ${timeWindow.minutes >= 60 ? `${timeWindow.minutes / 60}h` : `${timeWindow.minutes}m`}`;
+              } else if (timeWindow.direction === 'after') {
+                startTime = baseTime;
+                endTime = new Date(baseTime.getTime() + timeWindow.minutes * 60 * 1000);
+                description = `${timeWindow.minutes}min after ${formatTime(baseTime)}`;
+              } else {
+                startTime = new Date(baseTime.getTime() - timeWindow.minutes * 60 * 1000);
+                endTime = new Date(baseTime.getTime() + timeWindow.minutes * 60 * 1000);
+                description = `±${timeWindow.minutes}min around ${formatTime(baseTime)}`;
+              }
+              
               return (
                 <span>
                   Showing logs from <strong style={{ color: theme.colors.accentPrimary }}>{formatTime(startTime)}</strong> to <strong style={{ color: theme.colors.accentPrimary }}>{formatTime(endTime)}</strong>
                   <span style={{ color: theme.colors.textMuted, marginLeft: '8px' }}>
-                    (±{timeWindow.minutes} min around {formatTime(baseTime)})
+                    ({description})
                   </span>
                 </span>
               );
@@ -450,6 +575,90 @@ export default function App() {
           color: theme.colors.error,
         }}>
           {(currentQuery.error as Error)?.message || (fetchLogsMutation.error as Error)?.message}
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Help Modal */}
+      {showShortcuts && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+          }}
+          onClick={() => setShowShortcuts(false)}
+        >
+          <div 
+            style={{
+              backgroundColor: theme.colors.bgSecondary,
+              borderRadius: '12px',
+              padding: '24px 32px',
+              maxWidth: '400px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+              border: `1px solid ${theme.colors.borderSecondary}`,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 16px 0', color: theme.colors.textPrimary, fontSize: '18px' }}>
+              Keyboard Shortcuts
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <tbody>
+                {[
+                  ['/', 'Focus search bar'],
+                  ['Ctrl + K', 'Focus search bar'],
+                  ['Esc', 'Close popups / blur input'],
+                  ['R', 'Refresh logs'],
+                  ['T', 'Toggle dark/light theme'],
+                  ['?', 'Show this help'],
+                ].map(([key, desc]) => (
+                  <tr key={key} style={{ borderBottom: `1px solid ${theme.colors.borderSecondary}` }}>
+                    <td style={{ 
+                      padding: '10px 12px 10px 0', 
+                      color: theme.colors.accentPrimary,
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                    }}>
+                      {key}
+                    </td>
+                    <td style={{ 
+                      padding: '10px 0', 
+                      color: theme.colors.textSecondary,
+                      fontSize: '14px',
+                    }}>
+                      {desc}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ 
+              marginTop: '16px', 
+              textAlign: 'center',
+              color: theme.colors.textMuted,
+              fontSize: '12px',
+            }}>
+              Press <code style={{ 
+                backgroundColor: theme.colors.bgTertiary, 
+                padding: '2px 6px', 
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}>?</code> or <code style={{ 
+                backgroundColor: theme.colors.bgTertiary, 
+                padding: '2px 6px', 
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}>Esc</code> to close
+            </div>
+          </div>
         </div>
       )}
     </div>

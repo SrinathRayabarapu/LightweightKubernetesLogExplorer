@@ -119,10 +119,10 @@ async def search_logs(
     """
     print(f"[Search] Received query: {query}")
     
-    # For AND/OR queries, use LIKE-based search for guaranteed reliability
+    # For AND/OR/NOT queries, use LIKE-based search for guaranteed reliability
     # FTS5's boolean operators can be unreliable with certain tokenizations
-    if ' OR ' in query or ' AND ' in query:
-        print(f"[Search] Detected AND/OR query, using LIKE-based search")
+    if ' OR ' in query or ' AND ' in query or ' NOT ' in query:
+        print(f"[Search] Detected AND/OR/NOT query, using LIKE-based search")
         return await _search_logs_like(
             env, query, start_time, end_time, namespace, service, pod, limit
         )
@@ -272,15 +272,26 @@ async def _search_logs_like(
         conditions.append("timestamp <= ?")
         params.append(end_time.isoformat())
     
-    # Parse the search query for AND/OR
+    # Parse the search query for AND/OR/NOT
     # Remove quotes around terms for LIKE search
     clean_query = query.replace('"', '')
     
+    # First, extract NOT terms
+    not_terms = []
+    remaining_query = clean_query
+    
+    # Extract NOT terms (NOT followed by a word, can be at start or middle)
+    import re
+    not_pattern = r'(?:^|\s+)NOT\s+(\S+)'
+    not_matches = re.findall(not_pattern, remaining_query, re.IGNORECASE)
+    not_terms.extend(not_matches)
+    remaining_query = re.sub(not_pattern, '', remaining_query, flags=re.IGNORECASE).strip()
+    
     # Parse terms, handling both AND and OR
-    if ' OR ' in clean_query:
+    if ' OR ' in remaining_query:
         # OR logic: any term must match
         # Split by OR first
-        or_parts = clean_query.split(' OR ')
+        or_parts = remaining_query.split(' OR ')
         or_conditions = []
         
         for part in or_parts:
@@ -303,20 +314,28 @@ async def _search_logs_like(
         
         print(f"[Search LIKE] OR query with {len(or_conditions)} parts")
         
-    elif ' AND ' in clean_query:
+    elif ' AND ' in remaining_query:
         # AND logic: all terms must match
-        terms = [t.strip() for t in clean_query.split(' AND ') if t.strip()]
+        terms = [t.strip() for t in remaining_query.split(' AND ') if t.strip()]
         for term in terms:
             conditions.append("message LIKE ?")
             params.append(f"%{term}%")
         
         print(f"[Search LIKE] AND query with {len(terms)} terms: {terms}")
         
-    else:
+    elif remaining_query:
         # Simple query
         conditions.append("message LIKE ?")
-        params.append(f"%{clean_query}%")
-        print(f"[Search LIKE] Simple query: {clean_query}")
+        params.append(f"%{remaining_query}%")
+        print(f"[Search LIKE] Simple query: {remaining_query}")
+    
+    # Add NOT conditions (must NOT contain these terms)
+    for not_term in not_terms:
+        conditions.append("message NOT LIKE ?")
+        params.append(f"%{not_term}%")
+    
+    if not_terms:
+        print(f"[Search LIKE] NOT terms: {not_terms}")
     
     where_clause = " AND ".join(conditions)
     
