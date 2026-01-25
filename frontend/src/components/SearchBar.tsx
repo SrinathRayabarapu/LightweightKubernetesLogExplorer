@@ -1,9 +1,9 @@
 /**
  * Search bar component for full-text log search.
- * Supports Splunk-style AND/OR operators with in-line highlighting.
+ * Supports Splunk-style AND/OR operators.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 interface SearchBarProps {
@@ -13,65 +13,14 @@ interface SearchBarProps {
   disabled?: boolean;
 }
 
-/**
- * Render text with highlighted AND/OR keywords for the overlay display
- */
-function HighlightedText({ text, highlightColor, textColor }: { 
-  text: string; 
-  highlightColor: string;
-  textColor: string;
-}) {
-  if (!text) return null;
-  
-  // Split by AND and OR while keeping the delimiters and spaces
-  const parts = text.split(/(\s+AND\s+|\s+OR\s+)/gi);
-  
-  return (
-    <>
-      {parts.map((part, index) => {
-        const trimmedUpper = part.trim().toUpperCase();
-        if (trimmedUpper === 'AND' || trimmedUpper === 'OR') {
-          // Preserve the original spacing
-          const match = part.match(/^(\s*)(AND|OR)(\s*)$/i);
-          if (match) {
-            return (
-              <span key={index}>
-                {match[1]}
-                <span
-                  style={{
-                    backgroundColor: highlightColor,
-                    color: '#fff',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontWeight: 700,
-                    fontSize: '13px',
-                  }}
-                >
-                  {trimmedUpper}
-                </span>
-                {match[3]}
-              </span>
-            );
-          }
-        }
-        return <span key={index} style={{ color: textColor }}>{part}</span>;
-      })}
-    </>
-  );
-}
-
 export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProps) {
   const { theme } = useTheme();
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onSearch();
     }
   }, [onSearch]);
-
-  // Check if query contains AND/OR operators
-  const hasOperators = /\s+AND\s+|\s+OR\s+/i.test(value);
 
   const styles = {
     container: {
@@ -84,47 +33,21 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
       flex: 1,
       display: 'flex',
       alignItems: 'center',
-      // Background goes on wrapper when overlay is shown
-      backgroundColor: hasOperators ? theme.colors.inputBg : 'transparent',
-      borderRadius: '6px',
     },
     icon: {
       position: 'absolute' as const,
       left: '14px',
       fontSize: '16px',
       color: theme.colors.textMuted,
-      zIndex: 3,
     },
-    // The overlay that shows highlighted text - positioned ABOVE input with pointer-events: none
-    highlightOverlay: {
-      position: 'absolute' as const,
-      left: '40px',
-      right: '40px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      fontSize: '15px',
-      fontFamily: 'inherit',
-      whiteSpace: 'pre' as const,
-      pointerEvents: 'none' as const,
-      zIndex: 2, // Above input
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-    },
-    // The actual input - background transparent when overlay shown, text transparent
     input: {
       width: '100%',
       padding: '10px 40px',
       fontSize: '15px',
       border: `1px solid ${theme.colors.inputBorder}`,
       borderRadius: '6px',
-      // Background transparent when showing overlay, otherwise normal
-      backgroundColor: hasOperators ? 'transparent' : theme.colors.inputBg,
-      // Text transparent when showing overlay so overlay text is visible
-      color: hasOperators ? 'transparent' : theme.colors.inputText,
-      caretColor: theme.colors.inputText, // Keep cursor visible
-      position: 'relative' as const,
-      zIndex: 1,
+      backgroundColor: theme.colors.inputBg,
+      color: theme.colors.inputText,
     },
     clearButton: {
       position: 'absolute' as const,
@@ -135,7 +58,6 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
       color: theme.colors.textMuted,
       cursor: 'pointer',
       padding: '0 6px',
-      zIndex: 4,
     },
     searchButton: {
       padding: '10px 20px',
@@ -158,20 +80,7 @@ export function SearchBar({ value, onChange, onSearch, disabled }: SearchBarProp
     <div style={styles.container}>
       <div style={styles.inputWrapper}>
         <span style={styles.icon}>&#128269;</span>
-        
-        {/* Highlight overlay - shown ABOVE input when there are AND/OR operators */}
-        {hasOperators && value && (
-          <div style={styles.highlightOverlay}>
-            <HighlightedText 
-              text={value} 
-              highlightColor={theme.colors.accentSecondary || '#6366f1'}
-              textColor={theme.colors.inputText}
-            />
-          </div>
-        )}
-        
         <input
-          ref={inputRef}
           type="text"
           value={value}
           onChange={e => onChange(e.target.value)}
