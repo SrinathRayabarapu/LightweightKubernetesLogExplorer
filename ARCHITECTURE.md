@@ -340,14 +340,16 @@ frontend/src/
 │   │   ├── Time navigation integration
 │   │   └── Floating "Load More" button
 │   │
-│   ├── SearchBar.tsx       # Search input
-│   ├── TimeNavigation.tsx  # ±5m/±10m buttons
+│   ├── SearchBar.tsx       # Search input with history dropdown
+│   ├── TimeNavigation.tsx  # ±5m/±10m buttons (from timestamp click)
+│   ├── TimePresets.tsx     # Quick time presets (Last 5m, 15m, 1h, 4h, 24h)
 │   ├── EnvSelector.tsx     # Environment dropdown
 │   ├── PodSelector.tsx     # Pod dropdown with status
 │   ├── SearchableSelect.tsx # Autocomplete dropdown (Enter auto-selects single match)
 │   ├── RefreshIndicator.tsx # Refresh button & auto-refresh (10s/30s/1m/2m/5m/10m)
 │   │   # LogTable features: font size controls, Copy, Ask AI (Perplexity), Excel export
 │   └── ThemeSelector.tsx   # Theme dropdown
+│   # App.tsx features: Keyboard shortcuts (/, R, T, ?)
 │
 ├── config/
 │   ├── themes.ts           # 22 theme definitions
@@ -777,6 +779,66 @@ async def search_logs(query: str, ...):
 - 100% reliable matching with LIKE
 - FTS5 still used for simple single-term queries (performance)
 - Supports complex queries: `term1 AND term2 OR term3`
+
+---
+
+### Feature: NOT Operator Support
+
+Added support for the NOT operator in search queries.
+
+**Syntax:**
+- `error NOT timeout` - Contains "error" but NOT "timeout"
+- `error AND exception NOT debug` - Both "error" and "exception", excluding "debug"
+- `"error occurred" NOT "retry failed"` - Phrase exclusion
+
+**Implementation:**
+- Frontend (`searchParser.ts`): Parses NOT terms separately from positive terms
+- Backend (`log_store.py`): Adds `message NOT LIKE ?` conditions for each NOT term
+
+---
+
+### Feature: Search History
+
+Added search history with localStorage persistence.
+
+**Features:**
+- Last 10 searches stored
+- Dropdown appears when search bar is focused
+- Click to re-run previous search
+- "Clear All" to remove history
+- Persists across browser sessions
+
+**Storage Key:** `k8s-log-explorer-search-history`
+
+---
+
+### Feature: Time Presets
+
+Added quick time preset buttons for Splunk-style time filtering.
+
+**Presets:**
+- Last 5m, 15m, 1h, 4h, 24h
+- Uses existing `getLogsByTime` API with `direction: 'before'`
+- Timestamp set to current time on click
+
+---
+
+### Feature: Keyboard Shortcuts
+
+Added global keyboard shortcuts for power users.
+
+| Shortcut | Action |
+|----------|--------|
+| `/` or `Ctrl+K` | Focus search bar |
+| `Esc` | Close popups / blur input |
+| `R` | Refresh logs |
+| `T` | Toggle dark/light theme |
+| `?` | Show help modal |
+
+**Implementation:** Global `keydown` listener in `App.tsx` that:
+- Ignores shortcuts when typing in inputs (except Escape)
+- Uses `searchBarRef.focus()` to focus search
+- Toggles between `classicDark` and `daylight` themes
 
 ---
 

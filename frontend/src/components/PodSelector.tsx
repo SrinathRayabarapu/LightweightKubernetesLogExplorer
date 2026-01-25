@@ -28,11 +28,11 @@ export function PodSelector({
     container: {
       display: 'flex',
       flexDirection: 'column' as const,
-      gap: '6px',
-      minHeight: '54px',
+      gap: '3px',
+      minHeight: '46px',
     },
     label: {
-      fontSize: '13px',
+      fontSize: '11px',
       fontWeight: 600,
       color: theme.colors.textMuted,
       textTransform: 'uppercase' as const,
@@ -44,14 +44,14 @@ export function PodSelector({
       gap: '8px',
     },
     select: {
-      padding: '10px 14px',
-      fontSize: '15px',
+      padding: '8px 12px',
+      fontSize: '14px',
       border: `1px solid ${theme.colors.inputBorder}`,
-      borderRadius: '6px',
+      borderRadius: '5px',
       backgroundColor: theme.colors.inputBg,
       color: theme.colors.inputText,
       cursor: 'pointer',
-      minWidth: '300px',
+      minWidth: '280px',
       flex: '1 1 auto',
     },
     selectDisabled: {
@@ -60,7 +60,7 @@ export function PodSelector({
       cursor: 'not-allowed',
     },
     podInfoInline: {
-      fontSize: '13px',
+      fontSize: '12px',
       color: theme.colors.textMuted,
       whiteSpace: 'nowrap' as const,
     },

@@ -32,6 +32,7 @@ A lightweight, local web application for exploring Kubernetes logs across multip
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
 - [Development](#development)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Important: Cluster Configuration
@@ -82,9 +83,11 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | Feature | Description |
 |---------|-------------|
 | **Full-Text Search** | FTS5-powered instant search across all log messages |
-| **Splunk-Style AND/OR** | Combine search terms: `error AND timeout` or `error OR warning` |
+| **Splunk-Style AND/OR/NOT** | Combine terms: `error AND timeout`, `error OR warning`, `error NOT debug` |
 | **Text Selection Search** | Select text in logs → click "Add to Search" to append to query |
+| **Search History** | Recent searches stored and accessible via dropdown (last 10) |
 | **Search Highlighting** | All matched terms highlighted in yellow |
+| **Time Presets** | Quick time filters: Last 5m, 15m, 1h, 4h, 24h |
 | **Time Window Navigation** | Click any timestamp → navigate ±5min/±10min around it |
 | **Time Range Display** | Shows calculated start/end time for time window queries |
 | **Search Persistence** | Search automatically re-applied when switching pods |
@@ -95,6 +98,7 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 | Feature | Description |
 |---------|-------------|
 | **22 Professional Themes** | 11 dark + 11 light themes including Bootstrap-inspired options |
+| **Keyboard Shortcuts** | `/` search, `R` refresh, `T` theme, `F` filters, `?` help |
 | **Bootstrap CSS** | Standardized styling for consistent fonts and colors |
 | **Auto-Hiding Headers** | Table headers hide when scrolling down, reappear at top |
 | **Severity Highlighting** | Error/Warning/Exception logs highlighted with color-coded backgrounds |
@@ -700,24 +704,42 @@ Get-Content logs\frontend.log -Wait
 
 ### Searching Logs
 
-- Enter search terms in the search bar
+- Enter search terms in the search bar (or press `/` to focus)
 - Press Enter or click Search
-- **AND/OR Operations**:
+- **AND/OR/NOT Operations**:
   - `error AND timeout` - Both terms must match
   - `error OR warning` - Either term matches
-  - `"error occurred" AND exception` - Quoted phrases with AND
+  - `error NOT debug` - Contains "error" but NOT "debug"
+  - `"error occurred" AND exception NOT retry` - Complex queries
   - Default: space-separated words are AND: `error timeout` = `error AND timeout`
+- **Search History**: Click search bar to see recent searches (last 10)
 - **Highlighting**: All matched terms highlighted in yellow
 - **Text Selection**: Select any text in logs → popup appears → click "Add to Search"
 - **Persistence**: Search re-applied automatically when changing pods
 
-### Time Navigation
+### Time Presets & Navigation
 
+**Quick Time Presets** (above log table):
+- Click **Last 5m**, **15m**, **1h**, **4h**, or **24h** for instant filtering
+- Shows logs from the selected time range until now
+
+**Timestamp Navigation**:
 1. Click any log timestamp
 2. Use the **±5m** or **±10m** buttons to view surrounding logs
 3. Time range displayed: "Showing logs from X to Y"
 4. Or enter a custom time window
 5. Click "Clear Filter" to return to normal view
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `/` or `Ctrl+K` | Focus search bar |
+| `Esc` | Close popups / blur input |
+| `R` | Refresh logs |
+| `T` | Toggle dark/light theme |
+| `F` | Toggle filters panel |
+| `?` | Show keyboard shortcuts help |
 
 ### Log Filtering
 
@@ -1087,6 +1109,13 @@ npm run build
 cd frontend
 npm run build  # Includes TypeScript compilation
 ```
+
+## Roadmap
+
+See **[ROADMAP.md](ROADMAP.md)** for planned features including:
+
+- **Phase 2**: Wildcard search, saved searches, share URL, case sensitivity
+- **Phase 3**: Field extraction, timeline sparkline, live tail, regex search
 
 ## License
 
