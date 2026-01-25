@@ -32,6 +32,7 @@ A lightweight, local web application for exploring Kubernetes logs across multip
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
 - [Development](#development)
+- [Roadmap](#roadmap)
 - [License](#license)
 
 ## Important: Cluster Configuration
@@ -1107,6 +1108,13 @@ npm run build
 cd frontend
 npm run build  # Includes TypeScript compilation
 ```
+
+## Roadmap
+
+See **[ROADMAP.md](ROADMAP.md)** for planned features including:
+
+- **Phase 2**: Wildcard search, saved searches, share URL, case sensitivity
+- **Phase 3**: Field extraction, timeline sparkline, live tail, regex search
 
 ## License
 
