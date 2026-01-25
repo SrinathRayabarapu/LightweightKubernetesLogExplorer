@@ -145,8 +145,14 @@ async def search_logs(
         LIMIT ?
     """
     
-    # Properly escape the FTS query to handle special characters like . : * + - etc.
-    fts_query = escape_fts5_query(query)
+    # Handle FTS query: if it contains AND/OR operators, use as-is (already formatted)
+    # Otherwise, escape it for simple queries
+    if ' OR ' in query.upper() or ' AND ' in query.upper():
+        # Query already contains AND/OR operators - use as-is
+        fts_query = query
+    else:
+        # Simple query - escape it
+        fts_query = escape_fts5_query(query)
     
     rows = await fetch_all(
         search_query,
