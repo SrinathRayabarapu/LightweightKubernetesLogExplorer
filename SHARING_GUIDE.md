@@ -18,12 +18,17 @@ This guide helps you share the K8S Log Explorer with your team quickly and easil
    cd LightweightKubernetesLogExplorer
    ```
 
-2. **Start the application**
-   ```bash
-   docker-compose up -d
-   ```
+2. **Start Docker Desktop** (if not already running)
+   - Open Docker Desktop application
+   - Wait for it to fully start (whale icon in menu bar)
 
-3. **Access the app**
+3. **Start the application**
+   ```bash
+   docker compose up -d
+   ```
+   > **Note**: Use `docker compose` (space) not `docker-compose` (hyphen) for newer Docker versions
+
+4. **Access the app**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
 
@@ -31,24 +36,24 @@ This guide helps you share the K8S Log Explorer with your team quickly and easil
 
 ### Stop the Application
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### View Logs
 ```bash
 # All services
-docker-compose logs -f
+docker compose logs -f
 
 # Backend only
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Frontend only
-docker-compose logs -f frontend
+docker compose logs -f frontend
 ```
 
 ### Rebuild After Code Changes
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ---
@@ -128,6 +133,13 @@ ports:
   - "3001:3000"  # Frontend
 ```
 
+**Docker daemon not running**
+```bash
+# Start Docker Desktop application
+# On macOS: Open Applications > Docker
+# Wait for Docker to fully start (check menu bar icon)
+```
+
 **kubectl not working in container**
 - Ensure `~/.kube/config` exists on host
 - Check permissions: `chmod 600 ~/.kube/config`
@@ -135,7 +147,7 @@ ports:
 
 **Database persistence**
 - Database stored in `./data` directory
-- To reset: `docker-compose down && rm -rf data/`
+- To reset: `docker compose down && rm -rf data/`
 
 ### Traditional Setup Issues
 

@@ -137,28 +137,33 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
    cd LightweightKubernetesLogExplorer
    ```
 
-2. **Start the application**
-   ```bash
-   docker-compose up -d
-   ```
+2. **Start Docker Desktop** (if not already running)
+   - Open Docker Desktop application
+   - Wait for it to fully start
 
-3. **Access the app**
+3. **Start the application**
+   ```bash
+   docker compose up -d
+   ```
+   > **Note**: Use `docker compose` (space) not `docker-compose` (hyphen) for newer Docker versions
+
+4. **Access the app**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
 
 **Stop the application:**
 ```bash
-docker-compose down
+docker compose down
 ```
 
 **View logs:**
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 **Rebuild after code changes:**
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 > **📖 For detailed Docker instructions and troubleshooting, see [SHARING_GUIDE.md](SHARING_GUIDE.md)**
