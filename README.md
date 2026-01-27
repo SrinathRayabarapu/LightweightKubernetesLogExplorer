@@ -12,6 +12,8 @@ A lightweight, local web application for exploring Kubernetes logs across multip
   - [UI & Theming](#ui--theming)
 - [Requirements](#requirements)
 - [Installation & Run Guide](#installation--run-guide)
+  - [Quick Start with Docker (Recommended)](#-quick-start-with-docker-recommended)
+  - [Traditional Setup (Python + Node.js)](#traditional-setup-python--nodejs)
   - [macOS Installation Guide](#macos-installation-guide)
   - [Windows Installation Guide](#windows-installation-guide)
 - [Running in Production Mode](#running-in-production-mode)
@@ -34,6 +36,7 @@ A lightweight, local web application for exploring Kubernetes logs across multip
 - [Limitations](#limitations)
 - [Development](#development)
 - [Roadmap](#roadmap)
+- [Sharing with Your Team](#sharing-with-your-team)
 - [License](#license)
 
 ## Important: Cluster Configuration
@@ -112,11 +115,57 @@ See **[KUBECTL_SETUP.md](KUBECTL_SETUP.md)** for detailed cluster configuration 
 ## Requirements
 
 - **macOS** (tested on macOS 12+) or **Windows** (Windows 10/11, non-admin users supported)
-- Python 3.10+
-- Node.js 18+
+- Python 3.10+ (or Docker for Docker setup)
+- Node.js 18+ (or Docker for Docker setup)
 - kubectl installed and configured with cluster access
 
 ## Installation & Run Guide
+
+### 🐳 Quick Start with Docker (Recommended)
+
+**Easiest way to get started - no Python/Node installation needed!**
+
+**Prerequisites:**
+- Docker Desktop installed ([Download](https://www.docker.com/products/docker-desktop/))
+- kubectl configured on your host machine
+
+**Steps:**
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/SrinathRayabarapu/LightweightKubernetesLogExplorer.git
+   cd LightweightKubernetesLogExplorer
+   ```
+
+2. **Start the application**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Access the app**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+
+**Stop the application:**
+```bash
+docker-compose down
+```
+
+**View logs:**
+```bash
+docker-compose logs -f
+```
+
+**Rebuild after code changes:**
+```bash
+docker-compose up -d --build
+```
+
+> **📖 For detailed Docker instructions and troubleshooting, see [SHARING_GUIDE.md](SHARING_GUIDE.md)**
+
+---
+
+### Traditional Setup (Python + Node.js)
 
 > **Windows Users**: See [Windows Installation Guide](#windows-installation-guide) below for PowerShell-specific instructions.
 
@@ -1147,6 +1196,37 @@ See **[ROADMAP.md](ROADMAP.md)** for planned features including:
 
 - **Phase 2**: Wildcard search, saved searches, share URL, case sensitivity
 - **Phase 3**: Field extraction, timeline sparkline, live tail, regex search
+
+## Sharing with Your Team
+
+Want to share this tool with your team? We've got you covered!
+
+### 🐳 Recommended: Docker Compose
+
+The **easiest way** to share - just 3 steps:
+
+1. Clone the repo
+2. Run `docker-compose up -d`
+3. Access http://localhost:3000
+
+**No Python or Node.js installation needed!**
+
+### 📖 Complete Sharing Guide
+
+See **[SHARING_GUIDE.md](SHARING_GUIDE.md)** for:
+- Docker Compose setup (recommended)
+- GitHub clone instructions
+- Pre-built zip distribution
+- Troubleshooting tips
+- Team sharing best practices
+
+### Quick Comparison
+
+| Method | Setup Time | Requirements |
+|--------|-----------|--------------|
+| **Docker Compose** | ⚡ 2 minutes | Docker only |
+| **GitHub Clone** | ⏱️ 10 minutes | Python + Node |
+| **Zip File** | ⏱️ 10 minutes | Python + Node |
 
 ## License
 
