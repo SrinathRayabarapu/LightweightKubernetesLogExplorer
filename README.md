@@ -166,6 +166,11 @@ docker compose logs -f
 docker compose up -d --build
 ```
 
+**Troubleshooting:**
+- **403 Forbidden error?** Login to Docker Hub: `docker login` (free account at hub.docker.com)
+- **Permission denied?** Make sure Docker Desktop is fully started
+- See [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for more solutions
+
 > **📖 For detailed Docker instructions and troubleshooting, see [SHARING_GUIDE.md](SHARING_GUIDE.md)**
 
 ---

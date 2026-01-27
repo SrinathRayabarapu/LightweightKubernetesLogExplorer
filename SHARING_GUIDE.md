@@ -125,6 +125,24 @@ See [README.md](README.md) for detailed setup instructions.
 
 ### Docker Issues
 
+**403 Forbidden when pulling images**
+
+This is usually Docker Hub rate limiting. Solutions:
+
+1. **Login to Docker Hub** (recommended):
+   ```bash
+   docker login
+   # Create free account at https://hub.docker.com/signup if needed
+   ```
+
+2. **Check network/proxy settings** in Docker Desktop
+
+3. **Wait 5-10 minutes** and retry (rate limits reset)
+
+4. **Use traditional setup instead**: `./start.sh` (no Docker needed)
+
+See [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for detailed solutions.
+
 **Port already in use**
 ```bash
 # Change ports in docker-compose.yml
