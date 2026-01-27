@@ -3,13 +3,28 @@
 ## Error: 403 Forbidden when pulling images
 
 This error occurs when Docker Hub blocks requests due to:
+- **Corporate network policies** blocking Docker Hub (most common)
 - Rate limiting for anonymous users
 - Network/proxy issues
 - Authentication required
 
-### Solution 1: Login to Docker Hub (Recommended)
+### Solution 1: Use Traditional Setup Instead (Recommended for Corporate Networks)
 
-Create a free Docker Hub account and login:
+If your corporate network blocks Docker Hub, use the traditional setup:
+
+```bash
+# macOS/Linux
+./start.sh
+
+# Windows
+.\start.ps1
+```
+
+This doesn't require Docker Hub access and works perfectly fine!
+
+### Solution 2: Login to Docker Hub
+
+If Docker Hub is accessible, create a free Docker Hub account and login:
 
 ```bash
 # Login to Docker Hub

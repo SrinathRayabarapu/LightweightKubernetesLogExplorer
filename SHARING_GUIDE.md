@@ -127,19 +127,29 @@ See [README.md](README.md) for detailed setup instructions.
 
 **403 Forbidden when pulling images**
 
-This is usually Docker Hub rate limiting. Solutions:
+This is usually caused by:
+- **Corporate network policies** blocking Docker Hub (most common)
+- Docker Hub rate limiting
+- Network/proxy issues
 
-1. **Login to Docker Hub** (recommended):
+Solutions:
+
+1. **Use traditional setup instead** (recommended for corporate networks):
+   ```bash
+   ./start.sh  # macOS/Linux
+   .\start.ps1  # Windows
+   ```
+   This doesn't require Docker Hub access!
+
+2. **Login to Docker Hub** (if accessible):
    ```bash
    docker login
    # Create free account at https://hub.docker.com/signup if needed
    ```
 
-2. **Check network/proxy settings** in Docker Desktop
+3. **Check network/proxy settings** in Docker Desktop
 
-3. **Wait 5-10 minutes** and retry (rate limits reset)
-
-4. **Use traditional setup instead**: `./start.sh` (no Docker needed)
+4. **Wait 5-10 minutes** and retry (rate limits reset)
 
 See [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for detailed solutions.
 
