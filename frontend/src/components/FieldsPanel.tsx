@@ -368,7 +368,8 @@ export function FieldsPanel({
           </div>
         ) : (
           fieldEntries.map(([field, values]) => {
-            const isExpanded = expandedFields.has(field);
+            // Auto-expand when there's a search query, otherwise use manual expansion
+            const isExpanded = searchQuery.trim() ? true : expandedFields.has(field);
             const valueEntries = Object.entries(values);
             const totalCount = valueEntries.reduce((sum, [, count]) => sum + count, 0);
 
@@ -399,6 +400,8 @@ export function FieldsPanel({
                   <div style={styles.valuesList}>
                     {valueEntries.map(([value, count]) => {
                       const isActive = isValueActive(field, value);
+                      const query = searchQuery.toLowerCase();
+                      const valueMatches = query && value.toLowerCase().includes(query);
                       return (
                         <div
                           key={value}
@@ -406,6 +409,8 @@ export function FieldsPanel({
                             ...styles.valueItem,
                             backgroundColor: isActive
                               ? colors.accentPrimary + '30'
+                              : valueMatches
+                              ? colors.searchHighlight + '40'
                               : 'transparent',
                             border: isActive
                               ? `1px solid ${colors.accentPrimary}`
