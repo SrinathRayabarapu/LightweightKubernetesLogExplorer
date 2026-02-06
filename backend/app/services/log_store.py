@@ -81,11 +81,18 @@ def escape_fts5_query(query: str) -> str:
     Escape a search query for FTS5.
     
     FTS5 has special characters that need to be escaped:
-    - Wrap the entire query in double quotes for phrase/literal search
+    - If query contains AND/OR/NOT operators, use as-is (already formatted by frontend)
+    - For simple queries, wrap in double quotes for phrase/literal search
     - Escape any existing double quotes by doubling them
     
     This ensures characters like '.', ':', '*', '+', '-', etc. are treated literally.
     """
+    # If query already contains AND/OR/NOT operators, it's already formatted by frontend
+    # Don't wrap it in quotes as that would break the operators
+    if ' AND ' in query or ' OR ' in query or ' NOT ' in query:
+        return query
+    
+    # For simple queries, wrap in quotes for phrase matching
     # First, escape any double quotes in the query by doubling them
     escaped = query.replace('"', '""')
     # Wrap in double quotes to treat as a phrase/literal search
@@ -273,19 +280,25 @@ async def _search_logs_like(
         params.append(end_time.isoformat())
     
     # Parse the search query for AND/OR/NOT
-    # Remove quotes around terms for LIKE search
-    clean_query = query.replace('"', '')
+    # The frontend sends queries like: "term1" AND "term2" OR "term3"
+    # We need to extract quoted phrases and individual terms
+    
+    import re
     
     # First, extract NOT terms
     not_terms = []
-    remaining_query = clean_query
+    remaining_query = query
     
-    # Extract NOT terms (NOT followed by a word, can be at start or middle)
-    import re
-    not_pattern = r'(?:^|\s+)NOT\s+(\S+)'
-    not_matches = re.findall(not_pattern, remaining_query, re.IGNORECASE)
-    not_terms.extend(not_matches)
-    remaining_query = re.sub(not_pattern, '', remaining_query, flags=re.IGNORECASE).strip()
+    # Extract NOT terms (NOT followed by quoted string or word)
+    not_quoted_pattern = r'(?:^|\s+)NOT\s+"([^"]+)"'
+    not_quoted_matches = re.findall(not_quoted_pattern, remaining_query, re.IGNORECASE)
+    not_terms.extend(not_quoted_matches)
+    remaining_query = re.sub(not_quoted_pattern, '', remaining_query, flags=re.IGNORECASE)
+    
+    not_word_pattern = r'(?:^|\s+)NOT\s+(\S+)'
+    not_word_matches = re.findall(not_word_pattern, remaining_query, re.IGNORECASE)
+    not_terms.extend([m for m in not_word_matches if m not in not_terms])
+    remaining_query = re.sub(not_word_pattern, '', remaining_query, flags=re.IGNORECASE).strip()
     
     # Parse terms, handling both AND and OR
     if ' OR ' in remaining_query:
@@ -300,14 +313,16 @@ async def _search_logs_like(
                 continue
             
             # Each OR part might have AND within it
-            if ' AND ' in part:
-                and_terms = [t.strip() for t in part.split(' AND ') if t.strip()]
-                and_conditions = ["message LIKE ?" for _ in and_terms]
+            # Extract terms (remove quotes if present)
+            part_clean = part.replace('"', '').strip()
+            if ' AND ' in part_clean:
+                and_terms = [t.strip().replace('"', '') for t in part_clean.split(' AND ') if t.strip()]
+                and_conditions = ["LOWER(message) LIKE LOWER(?)" for _ in and_terms]
                 or_conditions.append(f"({' AND '.join(and_conditions)})")
                 params.extend([f"%{term}%" for term in and_terms])
             else:
-                or_conditions.append("message LIKE ?")
-                params.append(f"%{part}%")
+                or_conditions.append("LOWER(message) LIKE LOWER(?)")
+                params.append(f"%{part_clean}%")
         
         if or_conditions:
             conditions.append(f"({' OR '.join(or_conditions)})")
@@ -316,22 +331,27 @@ async def _search_logs_like(
         
     elif ' AND ' in remaining_query:
         # AND logic: all terms must match
-        terms = [t.strip() for t in remaining_query.split(' AND ') if t.strip()]
+        # Extract terms (remove quotes if present)
+        terms = [t.strip().replace('"', '') for t in remaining_query.split(' AND ') if t.strip()]
         for term in terms:
-            conditions.append("message LIKE ?")
+            # Use LOWER() for case-insensitive matching
+            conditions.append("LOWER(message) LIKE LOWER(?)")
             params.append(f"%{term}%")
         
         print(f"[Search LIKE] AND query with {len(terms)} terms: {terms}")
         
     elif remaining_query:
-        # Simple query
-        conditions.append("message LIKE ?")
-        params.append(f"%{remaining_query}%")
-        print(f"[Search LIKE] Simple query: {remaining_query}")
+        # Simple query (remove quotes if present)
+        clean_term = remaining_query.replace('"', '').strip()
+        # Use LOWER() for case-insensitive matching
+        conditions.append("LOWER(message) LIKE LOWER(?)")
+        params.append(f"%{clean_term}%")
+        print(f"[Search LIKE] Simple query: {clean_term}")
     
     # Add NOT conditions (must NOT contain these terms)
     for not_term in not_terms:
-        conditions.append("message NOT LIKE ?")
+        # Use LOWER() for case-insensitive matching
+        conditions.append("LOWER(message) NOT LIKE LOWER(?)")
         params.append(f"%{not_term}%")
     
     if not_terms:
@@ -339,9 +359,10 @@ async def _search_logs_like(
     
     where_clause = " AND ".join(conditions)
     
-    # Debug: print the full query
+    # Debug: print the full query and pod filter
+    print(f"[Search LIKE] Pod filter: {pod}")
     print(f"[Search LIKE] WHERE clause: {where_clause}")
-    print(f"[Search LIKE] Params: {params}")
+    print(f"[Search LIKE] Params count: {len(params)}, first few: {params[:5]}")
     
     # Get count
     count_query = f"SELECT COUNT(*) as count FROM logs WHERE {where_clause}"
