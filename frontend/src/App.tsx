@@ -148,6 +148,7 @@ export default function App() {
   }, [selectedEnv, namespace, service, selectedPod, theme.id, setTheme]);
 
   // Queries
+  // Always keep logsQuery enabled when a pod is selected - search uses client-side filtering
   const logsQuery = useLogs({
     env: selectedEnv,
     namespace: namespace || undefined,
@@ -155,9 +156,10 @@ export default function App() {
     pod: selectedPod || undefined,
     limit,
     offset,
-    enabled: viewMode === 'logs' && !!selectedEnv && !!selectedPod,
+    enabled: (viewMode === 'logs' || viewMode === 'search') && !!selectedEnv && !!selectedPod,
   });
 
+  // Backend search as supplementary source (finds logs not in current page)
   const searchLogsQuery = useSearchLogs({
     env: selectedEnv,
     query: activeSearch,
@@ -434,17 +436,83 @@ export default function App() {
   }, [autoRefreshEnabled, refreshInterval, selectedEnv, namespace, service, selectedPod, fetchLogsMutation]);
 
   // Determine current data source
-  const currentQuery = viewMode === 'search' ? searchLogsQuery :
-                       viewMode === 'time-window' ? timeWindowQuery :
-                       logsQuery;
+  // For search mode: use client-side filtering on loaded logs for reliability
+  // This guarantees that any log visible to the user can be found by search
+  const baseQuery = viewMode === 'time-window' ? timeWindowQuery : logsQuery;
 
   // Apply log exclusion filters to remove unwanted logs (healthchecks, etc.)
-  // User can toggle this off to see all logs including filtered ones
-  const rawLogs = currentQuery.data?.logs || [];
-  const logs = applyLogFilters ? filterLogs(rawLogs) : rawLogs;
-  const total = currentQuery.data?.total || 0;
+  const rawLogs = baseQuery.data?.logs || [];
+  
+  // Client-side search filtering function
+  const filterBySearch = useCallback((logs: typeof rawLogs, query: string): typeof rawLogs => {
+    if (!query.trim()) return logs;
+    
+    const q = query.trim();
+    
+    // Parse AND/OR/NOT operators (case-sensitive operator detection)
+    if (q.includes(' AND ') || q.includes(' OR ') || q.includes(' NOT ')) {
+      return logs.filter(log => {
+        const msg = log.message.toLowerCase();
+        
+        // Extract NOT terms first
+        let remaining = q;
+        const notTerms: string[] = [];
+        const notPattern = /\s+NOT\s+(?:"([^"]+)"|(\S+))/gi;
+        let notMatch;
+        while ((notMatch = notPattern.exec(remaining)) !== null) {
+          notTerms.push((notMatch[1] || notMatch[2]).toLowerCase());
+        }
+        remaining = remaining.replace(/\s+NOT\s+(?:"[^"]+"|(\S+))/gi, '').trim();
+        
+        // Check NOT terms - if any match, exclude this log
+        if (notTerms.some(term => msg.includes(term))) return false;
+        
+        // Handle OR
+        if (remaining.includes(' OR ')) {
+          const orParts = remaining.split(' OR ');
+          return orParts.some(part => {
+            part = part.trim();
+            if (part.includes(' AND ')) {
+              const andTerms = part.split(' AND ').map(t => t.trim().replace(/^"|"$/g, '').toLowerCase());
+              return andTerms.every(term => msg.includes(term));
+            }
+            return msg.includes(part.replace(/^"|"$/g, '').toLowerCase());
+          });
+        }
+        
+        // Handle AND
+        if (remaining.includes(' AND ')) {
+          const andTerms = remaining.split(' AND ').map(t => t.trim().replace(/^"|"$/g, '').toLowerCase());
+          return andTerms.every(term => msg.includes(term));
+        }
+        
+        // Simple term
+        return msg.includes(remaining.replace(/^"|"$/g, '').toLowerCase());
+      });
+    }
+    
+    // Simple query - substring match (case-insensitive)
+    const lowerQuery = q.toLowerCase();
+    return logs.filter(log => log.message.toLowerCase().includes(lowerQuery));
+  }, []);
+
+  // Apply search filter if in search mode
+  const filteredByExclusion = applyLogFilters ? filterLogs(rawLogs) : rawLogs;
+  const logs = viewMode === 'search' && activeSearch
+    ? filterBySearch(filteredByExclusion, activeSearch)
+    : filteredByExclusion;
+  
+  // Also check backend search results - merge unique logs not found client-side
+  const backendSearchLogs = viewMode === 'search' ? (searchLogsQuery.data?.logs || []) : [];
+  const clientLogIds = new Set(logs.map(l => l.id));
+  const additionalBackendLogs = backendSearchLogs.filter(l => !clientLogIds.has(l.id));
+  const mergedLogs = additionalBackendLogs.length > 0 ? [...logs, ...additionalBackendLogs] : logs;
+  
+  const total = viewMode === 'search' 
+    ? Math.max(mergedLogs.length, searchLogsQuery.data?.total || 0)
+    : baseQuery.data?.total || 0;
   const filteredCount = rawLogs.length - filterLogs(rawLogs).length; // Always calculate for display
-  const hasMore = currentQuery.data?.hasMore || false;
+  const hasMore = viewMode === 'search' ? false : (baseQuery.data?.hasMore || false);
 
   return (
     <div style={{
@@ -683,11 +751,12 @@ export default function App() {
             </div>
           ) : (
             <LogTable
-              logs={logs}
+              logs={mergedLogs}
               allLogs={rawLogs}
               total={total}
               hasMore={hasMore}
-              isLoading={currentQuery.isLoading || fetchLogsMutation.isPending}
+              isLoading={baseQuery.isLoading || fetchLogsMutation.isPending}
+              searchActive={viewMode === 'search' && !!activeSearch}
               filteredCount={filteredCount}
               filterPatterns={logFilterConfig.enabled ? logFilterConfig.excludePatterns : []}
               filtersEnabled={applyLogFilters}
@@ -702,14 +771,14 @@ export default function App() {
       </div>
 
       {/* Error display */}
-      {(currentQuery.error || fetchLogsMutation.error) && (
+      {(baseQuery.error || searchLogsQuery.error || fetchLogsMutation.error) && (
         <div style={{
           ...styles.error,
           backgroundColor: theme.colors.errorBg,
           borderTopColor: theme.colors.error,
           color: theme.colors.error,
         }}>
-          {(currentQuery.error as Error)?.message || (fetchLogsMutation.error as Error)?.message}
+          {(baseQuery.error as Error)?.message || (searchLogsQuery.error as Error)?.message || (fetchLogsMutation.error as Error)?.message}
         </div>
       )}
 

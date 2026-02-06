@@ -20,6 +20,7 @@ interface LogTableProps {
   filtersEnabled?: boolean; // Whether log filters are currently applied
   onToggleFilters?: () => void; // Callback to toggle log filters on/off
   searchQuery?: string; // Current search query for highlighting matches
+  searchActive?: boolean; // Whether a search is currently active (affects empty state message)
   onLoadMore: () => void;
   onTimeNavigate: (timestamp: string, windowMinutes: number, direction: 'before' | 'after' | 'around') => void;
   onAddToSearch?: (text: string) => void; // Callback to add selected text to search
@@ -31,7 +32,7 @@ const MAX_FONT_SIZE = 22;
 const DEFAULT_FONT_SIZE = 14;
 const FONT_SIZE_STORAGE_KEY = 'logTableFontSize';
 
-export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', onLoadMore, onTimeNavigate, onAddToSearch }: LogTableProps) {
+export function LogTable({ logs, allLogs, total, hasMore, isLoading, filteredCount = 0, filterPatterns = [], filtersEnabled = true, onToggleFilters, searchQuery = '', searchActive = false, onLoadMore, onTimeNavigate, onAddToSearch }: LogTableProps) {
   const { theme } = useTheme();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedTimestamp, setSelectedTimestamp] = useState<string | null>(null);
@@ -780,6 +781,17 @@ ${log.message}`;
   // Show empty state only when NOT loading and no logs
   // This prevents the momentary "No logs" flash during pod changes
   if (!logs.length && !isLoading) {
+    if (searchActive) {
+      return (
+        <div style={styles.empty}>
+          No matching logs found for your search.
+          <br />
+          <span style={{ fontSize: '13px', opacity: 0.7 }}>
+            Try clicking "Clear Filter" and refreshing logs, then search again.
+          </span>
+        </div>
+      );
+    }
     return <div style={styles.empty}>No logs found. Try fetching logs first.</div>;
   }
   
