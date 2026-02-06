@@ -492,7 +492,9 @@ export default function App() {
     }
     
     // Simple query - substring match (case-insensitive)
-    const lowerQuery = q.toLowerCase();
+    // Strip surrounding quotes if present (user wraps in "" for exact phrase match)
+    const cleanQuery = q.replace(/^"(.*)"$/, '$1');
+    const lowerQuery = cleanQuery.toLowerCase();
     return logs.filter(log => log.message.toLowerCase().includes(lowerQuery));
   }, []);
 
