@@ -110,32 +110,25 @@ async def search_logs(
     limit: int = 100,
 ) -> tuple[list[LogEntry], int]:
     """
-    Search logs using full-text search or LIKE-based search.
+    Search logs using LIKE-based search for maximum reliability.
     
     Supports:
-    - Simple queries: "error" - matches logs containing "error"
+    - Simple/phrase queries: "error occurred" - substring match
     - AND queries: term1 AND term2 - both terms must be present
     - OR queries: term1 OR term2 - either term can be present
-    - Phrase queries: "error occurred" - exact phrase match
+    - NOT queries: term1 NOT term2 - must NOT contain term2
     
-    For AND/OR queries, uses LIKE-based search for 100% reliability.
-    For simple queries, uses FTS5 for performance.
+    All searches use SQL LIKE for 100% reliable substring matching.
+    FTS5 is unreliable with special characters, underscores, and tokenization.
     
     Returns:
         Tuple of (list of matching logs, total count)
     """
     print(f"[Search] Received query: {query}")
     
-    # For AND/OR/NOT queries, use LIKE-based search for guaranteed reliability
-    # FTS5's boolean operators can be unreliable with certain tokenizations
-    if ' OR ' in query or ' AND ' in query or ' NOT ' in query:
-        print(f"[Search] Detected AND/OR/NOT query, using LIKE-based search")
-        return await _search_logs_like(
-            env, query, start_time, end_time, namespace, service, pod, limit
-        )
-    
-    # For simple queries, use FTS5 for performance
-    return await _search_logs_fts5(
+    # Always use LIKE-based search for guaranteed reliability
+    # FTS5 has issues with underscores, special chars, and tokenization
+    return await _search_logs_like(
         env, query, start_time, end_time, namespace, service, pod, limit
     )
 
